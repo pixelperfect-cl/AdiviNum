@@ -1,0 +1,11 @@
+{
+    "name": "@adivinum/shared",
+    "version": "0.1.0",
+    "private": true,
+    "main": "./dist/index.js",
+    "module": "./src/index.ts",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "tsc"
+    }
+}

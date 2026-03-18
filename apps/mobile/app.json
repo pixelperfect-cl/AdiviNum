@@ -1,0 +1,34 @@
+{
+    "expo": {
+        "name": "AdiviNum",
+        "slug": "adivinum",
+        "version": "0.1.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "scheme": "adivinum",
+        "userInterfaceStyle": "dark",
+        "newArchEnabled": true,
+        "splash": {
+            "backgroundColor": "#0A0E1A"
+        },
+        "ios": {
+            "supportsTablet": false,
+            "bundleIdentifier": "com.adivinum.app"
+        },
+        "android": {
+            "adaptiveIcon": {
+                "backgroundColor": "#0A0E1A"
+            },
+            "package": "com.adivinum.app"
+        },
+        "web": {
+            "bundler": "metro",
+            "output": "single",
+            "favicon": "./assets/favicon.png"
+        },
+        "plugins": [
+            "expo-router",
+            "expo-font"
+        ]
+    }
+}

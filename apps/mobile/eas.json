@@ -1,0 +1,43 @@
+{
+    "cli": {
+        "version": ">= 12.0.0",
+        "appVersionSource": "remote"
+    },
+    "build": {
+        "development": {
+            "developmentClient": true,
+            "distribution": "internal",
+            "env": {
+                "EXPO_PUBLIC_API_URL": "http://192.168.1.100:3000",
+                "EXPO_PUBLIC_WS_URL": "ws://192.168.1.100:3000"
+            }
+        },
+        "preview": {
+            "distribution": "internal",
+            "env": {
+                "EXPO_PUBLIC_API_URL": "https://staging.adivinum.com",
+                "EXPO_PUBLIC_WS_URL": "wss://staging.adivinum.com"
+            }
+        },
+        "production": {
+            "autoIncrement": true,
+            "env": {
+                "EXPO_PUBLIC_API_URL": "https://api.adivinum.com",
+                "EXPO_PUBLIC_WS_URL": "wss://api.adivinum.com"
+            }
+        }
+    },
+    "submit": {
+        "production": {
+            "ios": {
+                "appleId": "tu@email.com",
+                "ascAppId": "XXXXXXXXXX",
+                "appleTeamId": "XXXXXXXXXX"
+            },
+            "android": {
+                "serviceAccountKeyPath": "./play-store-key.json",
+                "track": "internal"
+            }
+        }
+    }
+}

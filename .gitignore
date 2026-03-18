@@ -1,0 +1,32 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Expo
+.expo/
+web-build/
+
+# Prisma
+apps/server/prisma/migrations/**/migration_lock.toml
+
+# Docker
+docker-data/
+
+# Build
+*.tsbuildinfo
+
+# Temporary
+adivinum.txt
+adivinum.zip
+ADIVINUM.docx
+ADIVINUM.zip
+docx_temp/
+deploy/
+admin_tsc.log
+mobile_tsc.log

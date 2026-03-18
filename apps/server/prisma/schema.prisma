@@ -1,0 +1,323 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================
+// Users & Auth
+// ============================================================
+
+model User {
+  id            String   @id @default(uuid())
+  supabaseUid   String?  @unique @map("supabase_uid")
+  username      String   @unique
+  email         String   @unique
+  avatarUrl     String?  @map("avatar_url")
+  pushToken     String?  @map("push_token")
+  referralCode  String?  @unique @map("referral_code")
+  currentLevel  Int      @default(1) @map("current_level")
+  eloRating     Int      @default(1000) @map("elo_rating")
+  streakCurrent Int      @default(0) @map("streak_current")
+  streakBest    Int      @default(0) @map("streak_best")
+  gamesPlayed   Int      @default(0) @map("games_played")
+  gamesWon      Int      @default(0) @map("games_won")
+  country       String?
+  language      String   @default("es")
+  isPremium     Boolean  @default(false) @map("is_premium")
+  isBanned      Boolean  @default(false) @map("is_banned")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  wallet         Wallet?
+  matchesAsA     Match[]          @relation("PlayerA")
+  matchesAsB     Match[]          @relation("PlayerB")
+  levelProgress  LevelProgress[]
+  achievements   UserAchievement[]
+  referralsMade  Referral[]       @relation("Referrer")
+  referralUsed   Referral?        @relation("Referred")
+  friendsSent     Friendship[]    @relation("FriendshipSender")
+  friendsReceived Friendship[]    @relation("FriendshipReceiver")
+  tournamentParticipants TournamentParticipant[]
+  tournamentMatchesA     TournamentMatch[] @relation("TMatchPlayerA")
+  tournamentMatchesB     TournamentMatch[] @relation("TMatchPlayerB")
+
+  @@map("users")
+}
+
+// ============================================================
+// Friendships
+// ============================================================
+
+model Friendship {
+  id         String           @id @default(uuid())
+  senderId   String           @map("sender_id")
+  receiverId String           @map("receiver_id")
+  status     FriendshipStatus @default(PENDING)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  sender   User @relation("FriendshipSender", fields: [senderId], references: [id])
+  receiver User @relation("FriendshipReceiver", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId])
+  @@map("friendships")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+}
+
+// ============================================================
+// Wallet & Transactions
+// ============================================================
+
+model Wallet {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+  balanceFiat     Int      @default(0) @map("balance_fiat")       // CLP in cents
+  balanceVirtual  Int      @default(10000) @map("balance_virtual") // Demo coins (start with 10k)
+  balanceSavings  Int      @default(0) @map("balance_savings")     // Savings account
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@map("wallets")
+}
+
+model Transaction {
+  id           String          @id @default(uuid())
+  walletId     String          @map("wallet_id")
+  type         TransactionType
+  amount       Int                                   // Always positive
+  currencyType CurrencyType    @map("currency_type")
+  description  String          @default("")
+  matchId      String?         @map("match_id")
+  metadata     Json?                                 // Extra data (bank info, etc)
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@index([walletId])
+  @@index([matchId])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  BET_HOLD
+  BET_RELEASE
+  WINNINGS
+  COMMISSION
+  REFERRAL_BONUS
+  GIFT_SENT
+  GIFT_RECEIVED
+}
+
+enum CurrencyType {
+  FIAT
+  VIRTUAL
+}
+
+// ============================================================
+// Game Matches
+// ============================================================
+
+model Match {
+  id           String       @id @default(uuid())
+  level        Int
+  betAmount    Int          @map("bet_amount")
+  currencyType CurrencyType @map("currency_type")
+  playerAId    String       @map("player_a_id")
+  playerBId    String       @map("player_b_id")
+  secretA      String       @map("secret_a")         // Encrypted
+  secretB      String       @map("secret_b")         // Encrypted
+  status       MatchStatus  @default(WAITING)
+  result       MatchResult?
+  firstTurn    String       @map("first_turn")        // "A" or "B"
+  timeUsedA    Int          @default(0) @map("time_used_a")  // ms
+  timeUsedB    Int          @default(0) @map("time_used_b")  // ms
+  createdAt    DateTime     @default(now()) @map("created_at")
+  finishedAt   DateTime?    @map("finished_at")
+
+  playerA  User           @relation("PlayerA", fields: [playerAId], references: [id])
+  playerB  User           @relation("PlayerB", fields: [playerBId], references: [id])
+  attempts MatchAttempt[]
+
+  @@index([playerAId])
+  @@index([playerBId])
+  @@index([status])
+  @@map("matches")
+}
+
+model MatchAttempt {
+  id        String   @id @default(uuid())
+  matchId   String   @map("match_id")
+  player    String                         // "A" or "B"
+  guess     String                         // 4-digit string
+  toques    Int
+  famas     Int
+  turnNumber Int     @map("turn_number")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  match Match @relation(fields: [matchId], references: [id])
+
+  @@index([matchId])
+  @@map("match_attempts")
+}
+
+enum MatchStatus {
+  WAITING
+  COIN_FLIP
+  IN_PROGRESS
+  FINISHED
+  ABANDONED
+}
+
+enum MatchResult {
+  PLAYER_A_WINS
+  PLAYER_B_WINS
+  DRAW
+  TIMEOUT_A
+  TIMEOUT_B
+  ABANDON_A
+  ABANDON_B
+}
+
+// ============================================================
+// Levels & Progression
+// ============================================================
+
+model LevelProgress {
+  id          String @id @default(uuid())
+  userId      String @map("user_id")
+  level       Int
+  gamesPlayed Int    @default(0) @map("games_played")
+  gamesWon    Int    @default(0) @map("games_won")
+  unlocked    Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, level])
+  @@map("level_progress")
+}
+
+// ============================================================
+// Achievements
+// ============================================================
+
+model Achievement {
+  id          String @id @default(uuid())
+  key         String @unique
+  name        String
+  description String
+  iconUrl     String? @map("icon_url")
+
+  users UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  achievementId String   @map("achievement_id")
+  unlockedAt    DateTime @default(now()) @map("unlocked_at")
+
+  user        User        @relation(fields: [userId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// ============================================================
+// Referrals
+// ============================================================
+
+model Referral {
+  id             String   @id @default(uuid())
+  referrerId     String   @map("referrer_id")
+  referredUserId String   @unique @map("referred_user_id")
+  status         String   @default("ACTIVE")
+  totalEarnings  Int      @default(0) @map("total_earnings")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  referrer     User @relation("Referrer", fields: [referrerId], references: [id])
+  referredUser User @relation("Referred", fields: [referredUserId], references: [id])
+
+  @@map("referrals")
+}
+
+// ============================================================
+// Tournaments
+// ============================================================
+
+model Tournament {
+  id                   String           @id @default(uuid())
+  name                 String
+  description          String?
+  format               String           @default("SINGLE_ELIMINATION")
+  level                Int
+  entryFee             Int              @map("entry_fee")
+  currencyType         CurrencyType     @map("currency_type")
+  prizePool            Int              @default(0) @map("prize_pool")
+  prizeDistribution    Json             @default("[50, 25, 15, 10]") @map("prize_distribution")
+  maxPlayers           Int              @map("max_players")
+  status               String           @default("REGISTRATION")
+  startsAt             DateTime         @map("starts_at")
+  startedAt            DateTime?        @map("started_at")
+  finishedAt           DateTime?        @map("finished_at")
+  registrationDeadline DateTime         @map("registration_deadline")
+  createdAt            DateTime         @default(now()) @map("created_at")
+
+  participants TournamentParticipant[]
+  matches      TournamentMatch[]
+
+  @@map("tournaments")
+}
+
+model TournamentParticipant {
+  id           String   @id @default(uuid())
+  tournamentId String   @map("tournament_id")
+  userId       String   @map("user_id")
+  status       String   @default("REGISTERED") // REGISTERED, ELIMINATED, WINNER
+  placement    Int?
+  joinedAt     DateTime @default(now()) @map("joined_at")
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@unique([tournamentId, userId])
+  @@map("tournament_participants")
+}
+
+model TournamentMatch {
+  id           String    @id @default(uuid())
+  tournamentId String    @map("tournament_id")
+  roundNumber  Int       @map("round_number")
+  matchIndex   Int       @map("match_index")
+  playerAId    String?   @map("player_a_id")
+  playerBId    String?   @map("player_b_id")
+  winnerId     String?   @map("winner_id")
+  completedAt  DateTime? @map("completed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  playerA    User?      @relation("TMatchPlayerA", fields: [playerAId], references: [id])
+  playerB    User?      @relation("TMatchPlayerB", fields: [playerBId], references: [id])
+
+  @@index([tournamentId, roundNumber])
+  @@map("tournament_matches")
+}

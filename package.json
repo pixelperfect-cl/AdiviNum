@@ -1,0 +1,20 @@
+{
+  "name": "adivinum",
+  "version": "1.0.0-beta",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace=apps/server",
+    "dev:mobile": "npm run start --workspace=apps/mobile",
+    "build:server": "npm run build --workspace=apps/server",
+    "build:mobile": "npm run build --workspace=apps/mobile",
+    "test": "npm run test --workspaces --if-present",
+    "test:server": "npm run test --workspace=apps/server"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
