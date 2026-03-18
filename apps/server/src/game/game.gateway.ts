@@ -798,7 +798,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
 
         try {
-            const { match, usernameA, usernameB, avatarA, avatarB } = await this.gameService.createMatch(
+            const { match, playerAName, playerBName, playerAAvatarUrl, playerBAvatarUrl } = await this.gameService.createMatch(
                 challenge.challengerId,
                 challenge.targetId,
                 challenge.level,
@@ -811,10 +811,10 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 matchId: match.id,
                 playerAId: match.playerAId,
                 playerBId: match.playerBId,
-                playerAName: usernameA,
-                playerBName: usernameB,
-                playerAAvatarUrl: avatarA,
-                playerBAvatarUrl: avatarB,
+                playerAName,
+                playerBName,
+                playerAAvatarUrl,
+                playerBAvatarUrl,
                 level: match.level,
                 betAmount: match.betAmount,
                 firstTurn: match.firstTurn,
@@ -836,8 +836,31 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 you: match.playerAId === challenge.targetId ? 'A' : 'B',
             });
 
-            // Start secret timer
-            this.startSecretTimer(match.id, levelConfig);
+            // Start secret timer — both players must set secret within time limit
+            const secretTimeoutS = this.SECRET_TIMEOUT_MS / 1000;
+            if (challengerSocketId) {
+                this.server.to(challengerSocketId).emit(GameEvent.SECRET_TIMER, { matchId: match.id, seconds: secretTimeoutS });
+            }
+            client.emit(GameEvent.SECRET_TIMER, { matchId: match.id, seconds: secretTimeoutS });
+
+            const secretTimer = setTimeout(async () => {
+                this.secretTimers.delete(match.id);
+                if (!this.gameService.areBothSecretsSet(match.id)) {
+                    this.logger.warn(`Secret timer expired for match ${match.id} — auto-forfeiting`);
+                    try {
+                        const result = await this.gameService.handleSecretTimeout(match.id);
+                        if (result) {
+                            const uA = this.gameService.getFirebaseUid(match.id, 'A');
+                            const uB = this.gameService.getFirebaseUid(match.id, 'B');
+                            if (uA) { const s = this.userSockets.get(uA); if (s) this.server.to(s).emit(GameEvent.GAME_OVER, result); }
+                            if (uB) { const s = this.userSockets.get(uB); if (s) this.server.to(s).emit(GameEvent.GAME_OVER, result); }
+                        }
+                    } catch (e) {
+                        this.logger.error(`Secret timeout handling error: ${e}`);
+                    }
+                }
+            }, this.SECRET_TIMEOUT_MS);
+            this.secretTimers.set(match.id, secretTimer);
 
             this.logger.log(`Challenge accepted — match ${match.id} created!`);
         } catch (err: any) {
