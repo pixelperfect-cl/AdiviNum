@@ -96,6 +96,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </div>
                 </div>
 
+                {/* Version link */}
+                <NavLink to="/changelog" className="sidebar__version-link">
+                    📝 v1.0.0-beta
+                </NavLink>
+
                 {/* Logout button in sidebar */}
                 <button className="sidebar__logout" onClick={() => logout()}>
                     🚪 Cerrar Sesión

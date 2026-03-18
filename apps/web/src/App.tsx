@@ -11,6 +11,7 @@ import { HistoryPage } from './pages/HistoryPage';
 import { SpectatePage } from './pages/SpectatePage';
 import { AchievementsPage } from './pages/AchievementsPage';
 import { FriendsPage } from './pages/FriendsPage';
+import { ChangelogPage } from './pages/ChangelogPage';
 import { OnboardingTutorial } from './components/OnboardingTutorial';
 import { useUserStore } from './stores/userStore';
 import { ConnectionStatus } from './components/ConnectionStatus';
@@ -34,6 +35,7 @@ function AuthenticatedApp() {
                         <Route path="/achievements" element={<AchievementsPage />} />
                         <Route path="/friends" element={<FriendsPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/changelog" element={<ChangelogPage />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </Layout>

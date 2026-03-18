@@ -1,0 +1,219 @@
+import { useState } from 'react';
+
+interface ChangelogEntry {
+    version: string;
+    date: string;
+    sections: {
+        title: string;
+        icon: string;
+        items: string[];
+    }[];
+}
+
+const CHANGELOG: ChangelogEntry[] = [
+    {
+        version: '1.0.0-BETA',
+        date: '2026-03-17',
+        sections: [
+            {
+                title: 'Gameplay Core',
+                icon: '🎮',
+                items: [
+                    'Juego 1v1 de deducción numérica — Famas & Toques',
+                    'Sistema de 7 niveles con dígitos progresivos',
+                    'Matchmaking por nivel y apuesta',
+                    'Turnos alternados con timer circular',
+                    'Sistema de revancha post-partida',
+                    'Modo Espectador en vivo',
+                    'Modo Práctica contra la CPU',
+                    'Emojis/reacciones rápidas en partida',
+                    'Revelación de número secreto post-partida',
+                ],
+            },
+            {
+                title: 'Sistema Competitivo',
+                icon: '🏆',
+                items: [
+                    'Rankings ELO con 8 rangos',
+                    'Ligas / Temporadas semanales con promoción y descenso',
+                    'Sistema de logros y medallas',
+                    'Torneos Single Elimination con bracket visual',
+                    'Torneos automáticos programados (3 templates)',
+                ],
+            },
+            {
+                title: 'Social',
+                icon: '👥',
+                items: [
+                    'Sistema de amigos — enviar/aceptar/rechazar/eliminar',
+                    'Retos directos a amigos vía WebSocket',
+                    'Perfil de jugador con estadísticas',
+                    'Búsqueda de jugadores',
+                ],
+            },
+            {
+                title: 'Economía',
+                icon: '💰',
+                items: [
+                    'Billetera virtual y real',
+                    'Apuestas con comisión del 5%',
+                    'Integración MercadoPago',
+                    'Sistema de referidos con bonos',
+                ],
+            },
+            {
+                title: 'Notificaciones',
+                icon: '🔔',
+                items: [
+                    'Push notifications (Expo)',
+                    'Templates: partida, turnos, resultados, amigos, torneos, ligas',
+                ],
+            },
+            {
+                title: 'Seguridad',
+                icon: '🛡️',
+                items: [
+                    'Autenticación Supabase (Google Sign-In)',
+                    'Rate Limiting (60 req/min)',
+                    'Validación estricta de inputs',
+                    'Manejo offline con auto-reconnect',
+                ],
+            },
+            {
+                title: 'Historial & Onboarding',
+                icon: '📊',
+                items: [
+                    'Historial detallado con timeline de intentos',
+                    'Tutorial interactivo de 8 pasos',
+                    'Skeleton loading animado',
+                ],
+            },
+            {
+                title: 'Internacionalización',
+                icon: '🌐',
+                items: [
+                    'Español 🇪🇸 e Inglés 🇺🇸',
+                    'Auto-detección del idioma',
+                    '100+ claves traducidas',
+                ],
+            },
+            {
+                title: 'Plataformas',
+                icon: '📱',
+                items: [
+                    'Web App (React + Vite)',
+                    'Mobile App (React Native + Expo)',
+                    'Admin Panel (Dashboard, Users, Matches, Tournaments)',
+                ],
+            },
+        ],
+    },
+];
+
+export function ChangelogPage() {
+    return (
+        <div className="fade-in">
+            <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '8px' }}>
+                📝 Changelog
+            </h2>
+            <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '24px' }}>
+                Notas de versión y actualizaciones
+            </p>
+
+            {CHANGELOG.map((entry) => (
+                <ChangelogEntryCard key={entry.version} entry={entry} />
+            ))}
+        </div>
+    );
+}
+
+function ChangelogEntryCard({ entry }: { entry: ChangelogEntry }) {
+    return (
+        <div style={{ marginBottom: '24px' }}>
+            {/* Version header */}
+            <div className="card" style={{ marginBottom: '12px', padding: '16px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <span style={{
+                            fontSize: '1.3rem',
+                            fontWeight: 800,
+                            background: 'linear-gradient(135deg, var(--gold), #ffaa00)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                        }}>
+                            v{entry.version}
+                        </span>
+                    </div>
+                    <span style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--text-muted)',
+                        fontFamily: "'Fira Mono', monospace",
+                    }}>
+                        {entry.date}
+                    </span>
+                </div>
+            </div>
+
+            {/* Sections */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {entry.sections.map((section) => (
+                    <SectionCard key={section.title} section={section} />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function SectionCard({ section }: { section: ChangelogEntry['sections'][0] }) {
+    const [expanded, setExpanded] = useState(true);
+
+    return (
+        <div className="card" style={{ padding: '12px 16px' }}>
+            <div
+                onClick={() => setExpanded(!expanded)}
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                }}
+            >
+                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
+                    {section.icon} {section.title}
+                </span>
+                <span style={{
+                    fontSize: '0.7rem',
+                    color: 'var(--text-muted)',
+                    transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s',
+                    display: 'inline-block',
+                }}>
+                    ▾
+                </span>
+            </div>
+
+            {expanded && (
+                <div style={{ marginTop: '10px', paddingLeft: '4px' }}>
+                    {section.items.map((item, i) => (
+                        <div key={i} style={{
+                            fontSize: '0.8rem',
+                            color: 'var(--text-secondary)',
+                            lineHeight: 1.6,
+                            paddingLeft: '12px',
+                            position: 'relative',
+                        }}>
+                            <span style={{
+                                position: 'absolute',
+                                left: 0,
+                                color: 'var(--gold)',
+                                fontWeight: 700,
+                            }}>•</span>
+                            {item}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
