@@ -5,6 +5,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
+    // Global API prefix — all routes become /api/...
+    app.setGlobalPrefix('api');
+
     // Global validation pipe
     app.useGlobalPipes(
         new ValidationPipe({
@@ -14,10 +17,16 @@ async function bootstrap() {
         }),
     );
 
-    // CORS — allow any localhost port in development
+    // CORS — allow localhost (dev) + production domains
     app.enableCors({
         origin: (origin, callback) => {
-            if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
+            const allowed = [
+                /^http:\/\/localhost:\d+$/,
+                /^https?:\/\/.*\.cloudwaysapps\.com$/,
+                /^https?:\/\/adivinum\.cl$/,
+                /^https?:\/\/.*\.adivinum\.cl$/,
+            ];
+            if (!origin || allowed.some((re) => re.test(origin))) {
                 callback(null, true);
             } else {
                 callback(new Error('Not allowed by CORS'));
