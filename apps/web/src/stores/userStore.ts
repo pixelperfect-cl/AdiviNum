@@ -12,6 +12,7 @@ interface User {
     eloRating: number;
     gamesPlayed: number;
     gamesWon: number;
+    xp: number;
     streakCurrent: number;
     country: string | null;
     isPremium: boolean;

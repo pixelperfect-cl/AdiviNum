@@ -214,19 +214,23 @@ a:hover {
     .sidebar__link {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px 14px;
+        gap: 10px;
+        padding: 10px 14px;
         border-radius: var(--radius-md);
         color: var(--text-secondary);
         font-weight: 500;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         transition: all var(--transition-fast);
         text-decoration: none;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid transparent;
+        margin-bottom: 2px;
     }
 
     .sidebar__link:hover {
-        background: var(--surface);
+        background: rgba(255, 255, 255, 0.07);
         color: var(--text-primary);
+        border-color: rgba(255, 255, 255, 0.08);
     }
 
     .sidebar__link.active {
@@ -234,12 +238,18 @@ a:hover {
         color: var(--gold);
         font-weight: 600;
         border: 1px solid rgba(255, 215, 0, 0.2);
+        box-shadow: 0 0 12px rgba(255, 215, 0, 0.08);
     }
 
     .sidebar__link-icon {
-        font-size: 1.3rem;
-        width: 28px;
+        font-size: 1.2rem;
+        width: 24px;
         text-align: center;
+    }
+
+    /* XP bar in sidebar */
+    .sidebar__xp-bar {
+        padding: 4px 16px 8px;
     }
 
     .sidebar__wallet {
@@ -350,6 +360,103 @@ a:hover {
     .sidebar__powered-by strong {
         color: var(--gold);
     }
+}
+
+/* XP Progress Bar */
+.xp-bar__track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.xp-bar__fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), #ff9800);
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+.xp-bar__label {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+    text-align: right;
+}
+
+/* Avatar Dropdown */
+.avatar-dropdown-wrapper {
+    position: relative;
+}
+
+.avatar-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 220px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    padding: 8px 0;
+    animation: dropdown-in 0.15s ease-out;
+}
+
+@keyframes dropdown-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.avatar-dropdown__header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+}
+
+.avatar-dropdown__header strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.avatar-dropdown__level {
+    font-size: 0.75rem;
+    color: var(--gold);
+}
+
+.avatar-dropdown__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 16px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    text-align: left;
+}
+
+.avatar-dropdown__item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+
+.avatar-dropdown__item--danger:hover {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+.avatar-dropdown__divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
 }
 
 /* Mobile footer */
@@ -1016,6 +1123,55 @@ a:hover {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 20px;
+    }
+}
+
+/* Performance cards — 3-column row */
+.perf-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.perf-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 16px 12px;
+    gap: 4px;
+}
+
+.perf-card__icon {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+}
+
+.perf-card__value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.perf-card__label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Stats charts row (profile page) */
+.stats-charts-row {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+@media (min-width: 768px) {
+    .stats-charts-row {
+        flex-direction: row;
+        gap: 16px;
     }
 }
 

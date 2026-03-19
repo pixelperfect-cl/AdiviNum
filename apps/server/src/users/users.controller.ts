@@ -45,6 +45,15 @@ export class UsersController {
         return this.usersService.getAchievements(user.id);
     }
 
+    @Get('me/level-info')
+    @SkipThrottle()
+    async getLevelInfo(@Req() req: any) {
+        const supabaseUid = req.user.uid;
+        const user = await this.usersService.findBySupabaseUid(supabaseUid);
+        if (!user) return null;
+        return this.usersService.getLevelInfo(user.id);
+    }
+
     @Get(':id')
     async getUser(@Param('id') id: string) {
         return this.usersService.findById(id);

@@ -103,5 +103,5 @@ fi
 
 echo ""
 echo "=========================="
-echo "🎮 AdiviNum v1.0.2-BETA is live!"
+echo "🎮 AdiviNum v1.0.3-BETA is live!"
 echo "=========================="

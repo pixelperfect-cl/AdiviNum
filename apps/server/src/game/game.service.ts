@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { GameEngineService } from './game-engine.service';
 import { WalletService } from '../wallet/wallet.service';
 import { RankingService } from '../ranking/ranking.service';
+import { UsersService } from '../users/users.service';
 import { getLevelConfig, MAX_ATTEMPTS } from '@adivinum/shared';
 import { MatchStatus, MatchResult, CurrencyType } from '@prisma/client';
 
@@ -42,6 +43,7 @@ export class GameService {
         private readonly engine: GameEngineService,
         private readonly wallet: WalletService,
         private readonly ranking: RankingService,
+        private readonly usersService: UsersService,
     ) { }
 
     /**
@@ -441,6 +443,19 @@ export class GameService {
         // Update ELO ratings
         if (winnerId && loserId) {
             await this.ranking.updateElo(winnerId, loserId);
+        }
+
+        // Post-match progression: XP + Achievements
+        try {
+            if (winnerId && loserId) {
+                await this.usersService.postMatchProgression(winnerId, 'WIN');
+                await this.usersService.postMatchProgression(loserId, 'LOSS');
+            } else if (result === MatchResult.DRAW) {
+                await this.usersService.postMatchProgression(active.playerAId, 'DRAW');
+                await this.usersService.postMatchProgression(active.playerBId, 'DRAW');
+            }
+        } catch (err) {
+            this.logger.error(`Post-match progression failed for match ${matchId}:`, err);
         }
 
         // Remove from active matches

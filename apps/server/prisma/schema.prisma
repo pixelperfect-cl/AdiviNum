@@ -26,6 +26,7 @@ model User {
   streakBest    Int      @default(0) @map("streak_best")
   gamesPlayed   Int      @default(0) @map("games_played")
   gamesWon      Int      @default(0) @map("games_won")
+  xp            Int      @default(0)
   country       String?
   language      String   @default("es")
   isPremium     Boolean  @default(false) @map("is_premium")
@@ -123,6 +124,7 @@ enum TransactionType {
   REFERRAL_BONUS
   GIFT_SENT
   GIFT_RECEIVED
+  ACHIEVEMENT_REWARD
 }
 
 enum CurrencyType {
@@ -223,6 +225,7 @@ model Achievement {
   name        String
   description String
   iconUrl     String? @map("icon_url")
+  reward      Int     @default(0)
 
   users UserAchievement[]
 

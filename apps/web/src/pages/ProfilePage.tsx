@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useUserStore } from '../stores/userStore';
 import { api } from '../services/api';
 
@@ -13,11 +14,121 @@ interface Achievement {
     name: string;
     description: string;
     icon: string;
+    reward: number;
     unlocked: boolean;
     unlockedAt: string | null;
 }
 
-type Tab = 'personal' | 'stats' | 'wallet' | 'achievements';
+// Radar / Spider chart component
+function RadarChart({ winRate, streak, wins, games, elo }: {
+    winRate: number; streak: number; wins: number; games: number; elo: number;
+}) {
+    const size = 200;
+    const cx = size / 2;
+    const cy = size / 2;
+    const levels = 4;
+    const radius = 80;
+
+    const axes = [
+        { label: 'Win %', value: Math.min(winRate / 100, 1) },
+        { label: 'Racha', value: Math.min(streak / 10, 1) },
+        { label: 'Victorias', value: Math.min(wins / 50, 1) },
+        { label: 'Partidas', value: Math.min(games / 100, 1) },
+        { label: 'ELO', value: Math.min((elo - 800) / 700, 1) },
+    ];
+
+    const n = axes.length;
+    const angleStep = (2 * Math.PI) / n;
+    const startAngle = -Math.PI / 2;
+
+    const getPoint = (i: number, r: number) => ({
+        x: cx + r * Math.cos(startAngle + i * angleStep),
+        y: cy + r * Math.sin(startAngle + i * angleStep),
+    });
+
+    // Grid polygons
+    const gridPolygons = Array.from({ length: levels }, (_, lvl) => {
+        const r = (radius / levels) * (lvl + 1);
+        const pts = Array.from({ length: n }, (_, i) => getPoint(i, r));
+        return pts.map(p => `${p.x},${p.y}`).join(' ');
+    });
+
+    // Data polygon
+    const dataPoints = axes.map((a, i) => {
+        const r = Math.max(a.value, 0.05) * radius;
+        return getPoint(i, r);
+    });
+    const dataPolygon = dataPoints.map(p => `${p.x},${p.y}`).join(' ');
+
+    // Axis lines & labels
+    const axisElements = axes.map((a, i) => {
+        const end = getPoint(i, radius);
+        const labelPos = getPoint(i, radius + 16);
+        return { ...a, end, labelPos, dot: dataPoints[i] };
+    });
+
+    return (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
+            <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="180" style={{ maxWidth: '220px' }}>
+                {/* Grid */}
+                {gridPolygons.map((pts, i) => (
+                    <polygon
+                        key={i}
+                        points={pts}
+                        fill="none"
+                        stroke="rgba(255,255,255,0.06)"
+                        strokeWidth="1"
+                    />
+                ))}
+
+                {/* Axis lines */}
+                {axisElements.map((a, i) => (
+                    <line key={i} x1={cx} y1={cy} x2={a.end.x} y2={a.end.y}
+                        stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                ))}
+
+                {/* Data fill */}
+                <polygon
+                    points={dataPolygon}
+                    fill="rgba(234, 179, 8, 0.15)"
+                    stroke="var(--gold)"
+                    strokeWidth="1.5"
+                />
+
+                {/* Data dots */}
+                {axisElements.map((a, i) => (
+                    <circle key={i} cx={a.dot.x} cy={a.dot.y} r="3"
+                        fill="var(--gold)" stroke="var(--bg)" strokeWidth="1" />
+                ))}
+
+                {/* Labels */}
+                {axisElements.map((a, i) => (
+                    <text key={i} x={a.labelPos.x} y={a.labelPos.y}
+                        textAnchor="middle" dominantBaseline="middle"
+                        fill="rgba(255,255,255,0.5)" fontSize="8" fontFamily="Inter, sans-serif">
+                        {a.label}
+                    </text>
+                ))}
+            </svg>
+        </div>
+    );
+}
+type Tab = 'personal' | 'stats' | 'history' | 'wallet' | 'achievements';
+
+interface MatchRecord {
+    id: string;
+    level: number;
+    betAmount: number;
+    currencyType: string;
+    opponent: string;
+    result: 'WIN' | 'LOSS' | 'DRAW';
+    resultDetail: string;
+    isAbandon: boolean;
+    isTimeout: boolean;
+    totalAttempts: number;
+    finishedAt: string;
+    createdAt: string;
+}
 
 function EloSparkline({ data }: { data: EloPoint[] }) {
     if (data.length < 2) return null;
@@ -80,10 +191,14 @@ function EloSparkline({ data }: { data: EloPoint[] }) {
 
 export function ProfilePage() {
     const { user, wallet, logout, googleAvatarUrl, googleDisplayName, updateProfile } = useUserStore();
-    const [activeTab, setActiveTab] = useState<Tab>('personal');
+    const [searchParams] = useSearchParams();
+    const initialTab = (searchParams.get('tab') as Tab) || 'personal';
+    const [activeTab, setActiveTab] = useState<Tab>(initialTab);
     const [eloHistory, setEloHistory] = useState<EloPoint[]>([]);
     const [achievements, setAchievements] = useState<Achievement[]>([]);
     const [showAllAchievements, setShowAllAchievements] = useState(false);
+    const [matchHistory, setMatchHistory] = useState<MatchRecord[]>([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
 
     // Editable fields
     const [editingUsername, setEditingUsername] = useState(false);
@@ -98,6 +213,25 @@ export function ProfilePage() {
             .then(setAchievements)
             .catch(console.error);
     }, []);
+
+    // Update active tab when URL changes
+    useEffect(() => {
+        const tab = searchParams.get('tab') as Tab;
+        if (tab && ['personal', 'stats', 'history', 'wallet', 'achievements'].includes(tab)) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
+
+    // Lazy-load history when tab opens
+    useEffect(() => {
+        if (activeTab === 'history' && matchHistory.length === 0 && !historyLoading) {
+            setHistoryLoading(true);
+            api.get<MatchRecord[]>('/users/me/matches')
+                .then(setMatchHistory)
+                .catch(console.error)
+                .finally(() => setHistoryLoading(false));
+        }
+    }, [activeTab]);
 
     if (!user) {
         return (
@@ -129,6 +263,7 @@ export function ProfilePage() {
     const tabs: { key: Tab; label: string; icon: string }[] = [
         { key: 'personal', label: 'Perfil', icon: '👤' },
         { key: 'stats', label: 'Estadísticas', icon: '📊' },
+        { key: 'history', label: 'Historial', icon: '📋' },
         { key: 'wallet', label: 'Billetera', icon: '💰' },
         { key: 'achievements', label: 'Logros', icon: '🏅' },
     ];
@@ -271,9 +406,39 @@ export function ProfilePage() {
                         <span className="stat-value">{user.email}</span>
                     </div>
 
-                    <div className="stat-row">
+                    <div className="stat-row" style={{ alignItems: 'center' }}>
                         <span className="stat-label">País</span>
-                        <span className="stat-value">{user.country || '🌍 Sin configurar'}</span>
+                        <select
+                            value={user.country || ''}
+                            onChange={async (e) => {
+                                await updateProfile({ country: e.target.value });
+                            }}
+                            style={{
+                                padding: '6px 10px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--border-color, #555)',
+                                background: 'var(--bg-main, #16161f)',
+                                color: 'var(--text-color, #fff)',
+                                fontSize: '0.85rem',
+                                cursor: 'pointer',
+                                appearance: 'auto',
+                            }}
+                        >
+                            <option value="">🌍 Seleccionar</option>
+                            <option value="CL">🇨🇱 Chile</option>
+                            <option value="AR">🇦🇷 Argentina</option>
+                            <option value="MX">🇲🇽 México</option>
+                            <option value="CO">🇨🇴 Colombia</option>
+                            <option value="PE">🇵🇪 Perú</option>
+                            <option value="BR">🇧🇷 Brasil</option>
+                            <option value="UY">🇺🇾 Uruguay</option>
+                            <option value="EC">🇪🇨 Ecuador</option>
+                            <option value="VE">🇻🇪 Venezuela</option>
+                            <option value="BO">🇧🇴 Bolivia</option>
+                            <option value="PY">🇵🇾 Paraguay</option>
+                            <option value="US">🇺🇸 Estados Unidos</option>
+                            <option value="ES">🇪🇸 España</option>
+                        </select>
                     </div>
 
                     <div className="stat-row">
@@ -296,40 +461,130 @@ export function ProfilePage() {
 
             {activeTab === 'stats' && (
                 <div>
-                    <div className="card" style={{ marginBottom: '16px' }}>
-                        <p className="section-subtitle">Estadísticas</p>
-                        <div className="stat-row">
-                            <span className="stat-label">Partidas jugadas</span>
-                            <span className="stat-value">{user.gamesPlayed}</span>
+                    {/* Charts row: ELO + Radar side by side */}
+                    <div className="stats-charts-row">
+                        {/* ELO Chart */}
+                        <div className="card" style={{ flex: 1 }}>
+                            <p className="section-subtitle">📈 Progreso ELO</p>
+                            {eloHistory.length >= 2 ? (
+                                <EloSparkline data={eloHistory} />
+                            ) : (
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', padding: '20px 0' }}>
+                                    Juega más partidas para ver tu progreso
+                                </p>
+                            )}
                         </div>
-                        <div className="stat-row">
-                            <span className="stat-label">Victorias</span>
-                            <span className="stat-value" style={{ color: 'var(--success)' }}>
-                                {user.gamesWon}
-                            </span>
-                        </div>
-                        <div className="stat-row">
-                            <span className="stat-label">Win Rate</span>
-                            <span className="stat-value">{winRate}%</span>
-                        </div>
-                        <div className="stat-row">
-                            <span className="stat-label">Rating ELO</span>
-                            <span className="stat-value" style={{ color: 'var(--gold)' }}>
-                                {user.eloRating}
-                            </span>
-                        </div>
-                        <div className="stat-row">
-                            <span className="stat-label">Racha actual</span>
-                            <span className="stat-value">🔥 {user.streakCurrent}</span>
+
+                        {/* Radar Chart */}
+                        <div className="card" style={{ flex: 1 }}>
+                            <p className="section-subtitle">🕸️ Perfil de Jugador</p>
+                            <RadarChart
+                                winRate={winRate}
+                                streak={user.streakCurrent}
+                                wins={user.gamesWon}
+                                games={user.gamesPlayed}
+                                elo={user.eloRating}
+                            />
                         </div>
                     </div>
 
-                    {/* ELO Chart */}
-                    {eloHistory.length >= 2 && (
-                        <div className="card">
-                            <p className="section-subtitle">📈 Progreso ELO</p>
-                            <EloSparkline data={eloHistory} />
+                    {/* Stat summary cards */}
+                    <div className="perf-cards" style={{ marginTop: '16px' }}>
+                        <div className="card perf-card">
+                            <div className="perf-card__icon">⚔️</div>
+                            <div className="perf-card__value">{user.gamesPlayed}</div>
+                            <div className="perf-card__label">Partidas</div>
                         </div>
+                        <div className="card perf-card">
+                            <div className="perf-card__icon">🏆</div>
+                            <div className="perf-card__value" style={{ color: 'var(--success)' }}>{user.gamesWon}</div>
+                            <div className="perf-card__label">Victorias</div>
+                        </div>
+                        <div className="card perf-card">
+                            <div className="perf-card__icon">📊</div>
+                            <div className="perf-card__value">{winRate}%</div>
+                            <div className="perf-card__label">Win Rate</div>
+                        </div>
+                        <div className="card perf-card">
+                            <div className="perf-card__icon">🏅</div>
+                            <div className="perf-card__value" style={{ color: 'var(--gold)' }}>{user.eloRating}</div>
+                            <div className="perf-card__label">ELO</div>
+                        </div>
+                        <div className="card perf-card">
+                            <div className="perf-card__icon">🔥</div>
+                            <div className="perf-card__value">{user.streakCurrent}</div>
+                            <div className="perf-card__label">Racha</div>
+                        </div>
+                        <div className="card perf-card">
+                            <div className="perf-card__icon">💀</div>
+                            <div className="perf-card__value" style={{ color: 'var(--error)' }}>{user.gamesPlayed - user.gamesWon}</div>
+                            <div className="perf-card__label">Derrotas</div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'history' && (
+                <div>
+                    {historyLoading ? (
+                        <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
+                            <div className="spinner" />
+                        </div>
+                    ) : matchHistory.length === 0 ? (
+                        <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                            <p style={{ fontSize: '2rem', marginBottom: '8px' }}>🎮</p>
+                            <p style={{ color: 'var(--text-secondary)' }}>Aún no has jugado ninguna partida.</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Quick stats */}
+                            <div className="quick-stats" style={{ marginBottom: '16px' }}>
+                                <div className="card quick-stat">
+                                    <div className="quick-stat__value">{matchHistory.length}</div>
+                                    <div className="quick-stat__label">Total</div>
+                                </div>
+                                <div className="card quick-stat">
+                                    <div className="quick-stat__value" style={{ color: 'var(--success)' }}>{matchHistory.filter(m => m.result === 'WIN').length}</div>
+                                    <div className="quick-stat__label">Victorias</div>
+                                </div>
+                                <div className="card quick-stat">
+                                    <div className="quick-stat__value" style={{ color: 'var(--error)' }}>{matchHistory.filter(m => m.result === 'LOSS').length}</div>
+                                    <div className="quick-stat__label">Derrotas</div>
+                                </div>
+                            </div>
+                            {/* Match list */}
+                            <div className="history-list">
+                                {matchHistory.map(match => {
+                                    const rc = { WIN: { e: '🏆', l: 'Victoria', c: 'var(--success)', cn: 'history-card--win' }, LOSS: { e: '😔', l: 'Derrota', c: 'var(--error)', cn: 'history-card--loss' }, DRAW: { e: '🤝', l: 'Empate', c: 'var(--text-secondary)', cn: 'history-card--draw' } };
+                                    const cfg = rc[match.result];
+                                    const dMs = new Date(match.finishedAt).getTime() - new Date(match.createdAt).getTime();
+                                    const tSec = Math.floor(dMs / 1000);
+                                    const dur = tSec >= 60 ? `${Math.floor(tSec / 60)}m ${tSec % 60}s` : `${tSec}s`;
+                                    const ago = (() => { const d = Date.now() - new Date(match.finishedAt).getTime(); const m = Math.floor(d / 60000); if (m < 60) return `${m}min`; const h = Math.floor(d / 3600000); if (h < 24) return `${h}h`; return `${Math.floor(d / 86400000)}d`; })();
+                                    return (
+                                        <div key={match.id} className={`card history-card ${cfg.cn}`}>
+                                            <div className="history-card__header">
+                                                <span className="history-card__result" style={{ color: cfg.c }}>{cfg.e} {cfg.l}</span>
+                                                <span className="history-card__time">{ago}</span>
+                                            </div>
+                                            <div className="history-card__body">
+                                                <div className="history-card__opponent">
+                                                    <span className="history-card__label">vs</span>
+                                                    <span className="history-card__opponent-name">{match.opponent}</span>
+                                                </div>
+                                                <div className="history-card__details">
+                                                    <span>Nv{match.level}</span>
+                                                    <span className="history-card__dot">•</span>
+                                                    <span>{match.currencyType === 'VIRTUAL' ? '🪙' : '💰'} {match.betAmount.toLocaleString()}</span>
+                                                    <span className="history-card__dot">•</span>
+                                                    <span>⏱ {dur}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
                     )}
                 </div>
             )}
@@ -381,6 +636,11 @@ export function ProfilePage() {
                                 <div className="achievement-info">
                                     <div className="achievement-name">{a.name}</div>
                                     <div className="achievement-desc">{a.description}</div>
+                                    {a.reward > 0 && (
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--gold)', marginTop: '2px' }}>
+                                            🪙 {a.reward.toLocaleString()} monedas
+                                        </div>
+                                    )}
                                     {a.unlocked && a.unlockedAt && (
                                         <div className="achievement-date">
                                             ✅ {new Date(a.unlockedAt).toLocaleDateString()}
