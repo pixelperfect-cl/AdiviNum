@@ -18,6 +18,7 @@ APP_DIR=~/adivinum
 PUBLIC_HTML=~/applications/rversgpswt/public_html
 
 cd $APP_DIR
+mkdir -p $APP_DIR/logs
 
 # 1. Pull latest code
 echo ""
@@ -73,32 +74,34 @@ cp -r apps/web/dist/assets/* $PUBLIC_HTML/assets/ 2>/dev/null || mkdir -p $PUBLI
 mkdir -p $PUBLIC_HTML/admin
 cp -r apps/admin/dist/* $PUBLIC_HTML/admin/
 
-# Server backend → public_html/backend/
-cp -r apps/server/dist/* $PUBLIC_HTML/backend/apps/server/dist/
-cp apps/server/package.json $PUBLIC_HTML/backend/apps/server/
+# Server backend — no longer copying to public_html/backend
+# Server runs directly from $APP_DIR/apps/server (has node_modules, .env, prisma)
 
 # Restart Node server
 echo ""
 echo "🔄 Restarting server..."
-OLD_PID=$(ps aux | grep 'node.*server/dist/main' | grep -v grep | awk '{print $2}')
+OLD_PID=$(ps aux | grep 'node.*dist/main' | grep -v grep | awk '{print $2}')
 if [ -n "$OLD_PID" ]; then
     kill $OLD_PID
     sleep 2
 fi
-cd $PUBLIC_HTML/backend && nohup node apps/server/dist/main > /dev/null 2>&1 &
+
+cd $APP_DIR/apps/server
+nohup node dist/main > $APP_DIR/logs/server.log 2>&1 &
 cd $APP_DIR
 
 # Health check
 echo ""
 echo "🏥 Running health check..."
-sleep 3
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health || echo "000")
+sleep 5
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health || echo "000")
 
 if [ "$HTTP_CODE" == "200" ]; then
     echo "✅ Deploy successful! Server is healthy."
 else
     echo "⚠️ Warning: Health check returned $HTTP_CODE"
     echo "   Check: ps aux | grep node"
+    echo "   Logs: tail -50 $APP_DIR/logs/server.log"
 fi
 
 echo ""
