@@ -12,6 +12,45 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.0.4-BETA',
+        date: '2026-03-19',
+        sections: [
+            {
+                title: 'Sistema de Niveles y XP',
+                icon: '⭐',
+                items: [
+                    'Sistema de experiencia (XP) — gana puntos con cada partida',
+                    'Victoria +30 XP, Empate +10 XP, Derrota +5 XP',
+                    '10 niveles progresivos (0 a 500 XP acumulados)',
+                    'Barra de progreso XP en Home y sidebar',
+                    'Endpoint /users/me/level-info para datos de nivel',
+                ],
+            },
+            {
+                title: 'Logros con Recompensas',
+                icon: '🏅',
+                items: [
+                    '10 logros que se desbloquean automáticamente al cumplir criterios',
+                    'Recompensas en monedas virtuales (hasta 30.000 🪙)',
+                    'Las monedas se acreditan directamente en tu billetera',
+                    'Los logros muestran su recompensa en la pestaña de Logros',
+                    'Tracking de logros post-partida con detección automática',
+                ],
+            },
+            {
+                title: 'Rediseño de Navegación',
+                icon: '🧭',
+                items: [
+                    'Menú dropdown al hacer click en avatar con acceso rápido a todas las secciones del perfil',
+                    'Sidebar con botones estilo tarjeta en desktop',
+                    'Historial movido como 5ª pestaña del perfil (Perfil → Estadísticas → Historial → Billetera → Logros)',
+                    'Deep-linking con ?tab= para navegar directo a secciones del perfil',
+                    'Barra XP dorada animada en sidebar',
+                ],
+            },
+        ],
+    },
+    {
         version: '1.0.3-BETA',
         date: '2026-03-19',
         sections: [

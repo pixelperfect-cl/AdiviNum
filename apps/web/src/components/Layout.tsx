@@ -7,6 +7,7 @@ import { api } from '../services/api';
 const NAV_ITEMS = [
     { to: '/', icon: '🏠', label: 'Inicio', end: true },
     { to: '/play', icon: '🎮', label: 'Jugar' },
+    { to: '/profile', icon: '👤', label: 'Perfil' },
     { to: '/spectate', icon: '👁️', label: 'Espectador' },
     { to: '/ranking', icon: '🏆', label: 'Ranking' },
     { to: '/friends', icon: '👥', label: 'Amigos' },
@@ -155,7 +156,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {/* Version badge */}
                 <NavLink to="/changelog" className="sidebar__version-badge">
                     <span className="sidebar__version-badge-icon">🎮</span>
-                    <span className="sidebar__version-badge-text">AdiviNum v1.0.3</span>
+                    <span className="sidebar__version-badge-text">AdiviNum v1.0.4</span>
                     <span className="sidebar__version-badge-tag">BETA</span>
                 </NavLink>
 
@@ -281,7 +282,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {/* Footer — visible on mobile */}
                 <footer className="app-footer mobile-only">
                     <NavLink to="/changelog" className="app-footer__version">
-                        🎮 AdiviNum v1.0.3 BETA
+                        🎮 AdiviNum v1.0.4 BETA
                     </NavLink>
                     <a
                         href="https://pixelperfect.cl"
