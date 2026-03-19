@@ -4,8 +4,64 @@ import { useGameStore } from '../stores/gameStore';
 import { useUserStore } from '../stores/userStore';
 import { setSecret as sendSecret, makeGuess, surrender, offerDraw, respondDraw, sendChatMessage, requestRematch, respondRematch } from '../services/socket';
 import { isValidSecret, getLevelConfig } from '@adivinum/shared';
-import { CircularTimer } from '../components/CircularTimer';
 import { soundGuessSent } from '../services/sounds';
+import { NumPad } from '../components/NumPad';
+
+// ---- Energy Bar Timer ----
+function PlayerTimerBar({ name, timeMs, maxTimeMs, isActive, side }: {
+    name: string;
+    timeMs: number;
+    maxTimeMs: number;
+    isActive: boolean;
+    side: 'left' | 'right';
+}) {
+    const [localTimeMs, setLocalTimeMs] = useState(timeMs);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    useEffect(() => { setLocalTimeMs(timeMs); }, [timeMs]);
+
+    useEffect(() => {
+        if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+        if (isActive && localTimeMs > 0) {
+            intervalRef.current = setInterval(() => {
+                setLocalTimeMs((prev) => Math.max(0, prev - 1000));
+            }, 1000);
+        }
+        return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    }, [isActive]);
+
+    const totalSeconds = Math.max(0, Math.floor(localTimeMs / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    const timeStr = `${minutes}:${String(seconds).padStart(2, '0')}`;
+    const fraction = maxTimeMs > 0 ? Math.max(0, Math.min(1, localTimeMs / maxTimeMs)) : 1;
+
+    const getColor = () => {
+        if (totalSeconds <= 10) return '#ff4444';
+        if (totalSeconds <= 30) return '#ffaa00';
+        return '#44cc44';
+    };
+
+    const isCritical = totalSeconds <= 10 && isActive;
+
+    return (
+        <div className={`player-timer ${isActive ? 'player-timer--active' : ''} player-timer--${side}`}>
+            <div className="player-timer__info">
+                <span className="player-timer__name">{name}</span>
+                <span className="player-timer__time" style={{ color: getColor() }}>{timeStr}</span>
+            </div>
+            <div className={`player-timer__bar ${isCritical ? 'player-timer__bar--critical' : ''}`}>
+                <div
+                    className="player-timer__bar-fill"
+                    style={{
+                        width: `${fraction * 100}%`,
+                        background: `linear-gradient(90deg, ${getColor()}, ${getColor()}cc)`,
+                    }}
+                />
+            </div>
+        </div>
+    );
+}
 
 export function GamePage() {
     const navigate = useNavigate();
@@ -193,9 +249,6 @@ function PlayingPhase() {
         setGuess('');
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') handleGuess();
-    };
 
     const handleSendChat = () => {
         const msg = chatMsg.trim();
@@ -223,13 +276,14 @@ function PlayingPhase() {
                 </div>
             )}
 
-            {/* Header with turn indicator and circular timers */}
-            <div className="game-header">
-                <CircularTimer
+            {/* Header with energy bar timers */}
+            <div className="game-header-v2">
+                <PlayerTimerBar
+                    name="Tú"
                     timeMs={game.myTimeRemaining}
                     maxTimeMs={maxTimeMs}
                     isActive={game.isMyTurn}
-                    label="Tú"
+                    side="left"
                 />
                 <div className="game-turn-indicator">
                     {game.isMyTurn ? (
@@ -238,13 +292,43 @@ function PlayingPhase() {
                         <span className="turn-badge turn-opponent">Turno rival</span>
                     )}
                 </div>
-                <CircularTimer
+                <PlayerTimerBar
+                    name={game.opponentName || 'Rival'}
                     timeMs={game.opponentTimeRemaining}
                     maxTimeMs={maxTimeMs}
                     isActive={!game.isMyTurn}
-                    label={game.opponentName || 'Rival'}
+                    side="right"
                 />
             </div>
+
+            {/* My secret number reference */}
+            {game.mySecret && (
+                <div style={{
+                    textAlign: 'center',
+                    margin: '4px 0 8px',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                }}>
+                    <span>🔒 Tu número:</span>
+                    <span style={{
+                        fontFamily: 'monospace',
+                        fontSize: '0.95rem',
+                        fontWeight: 700,
+                        color: 'var(--gold)',
+                        letterSpacing: '3px',
+                        background: 'rgba(255, 215, 0, 0.08)',
+                        padding: '2px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255, 215, 0, 0.15)',
+                    }}>
+                        {game.mySecret}
+                    </span>
+                </div>
+            )}
 
             {/* Two-column: my attempts | opponent attempts */}
             <div className="game-board">
@@ -291,33 +375,12 @@ function PlayingPhase() {
             <div className="game-input-area">
                 {game.isMyTurn ? (
                     <>
-                        <div className="guess-input-group">
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                inputMode="numeric"
-                                className="guess-input"
-                                maxLength={4}
-                                value={guess}
-                                onChange={(e) => {
-                                    setGuess(e.target.value.replace(/\D/g, '').slice(0, 4));
-                                    setError('');
-                                }}
-                                onKeyDown={handleKeyDown}
-                                placeholder="1234"
-                                autoFocus
-                            />
-                            <button
-                                className="btn btn--primary"
-                                onClick={handleGuess}
-                                disabled={guess.length !== 4}
-                            >
-                                Enviar
-                            </button>
-                        </div>
-                        <p className="game-hint" style={{ marginTop: '4px', fontSize: '0.85rem' }}>
-                            {guess.length > 0 ? `${guess.length}/4 dígitos` : '4 dígitos únicos, sin empezar en 0'}
-                        </p>
+                        <NumPad
+                            value={guess}
+                            maxLength={4}
+                            onChange={(v) => { setGuess(v); setError(''); }}
+                            onSubmit={handleGuess}
+                        />
                     </>
                 ) : (
                     <div className="waiting-turn">

@@ -98,7 +98,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
                 {/* Version link */}
                 <NavLink to="/changelog" className="sidebar__version-link">
-                    📝 v1.0.0-beta
+                    📝 v1.0.1-beta
                 </NavLink>
 
                 {/* Logout button in sidebar */}
@@ -115,7 +115,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <div className="top-header__spacer desktop-only" />
                     <div className="top-header__right">
                         <button
-                            className="top-header__play-cta"
+                            className="top-header__play-cta desktop-only"
                             onClick={() => navigate('/play')}
                         >
                             🎯 ¡Jugar!

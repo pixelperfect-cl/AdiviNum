@@ -34,6 +34,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private secretTimers = new Map<string, NodeJS.Timeout>();
     // Disconnection grace timers: matchId:userId -> timeout
     private disconnectTimers = new Map<string, NodeJS.Timeout>();
+    // Turn timers: matchId -> timeout (auto-timeout when current player's clock expires)
+    private turnTimers = new Map<string, NodeJS.Timeout>();
 
     private readonly SECRET_TIMEOUT_MS = 30_000;   // 30s to set secret
     private readonly RECONNECT_GRACE_MS = 30_000;   // 30s to reconnect
@@ -43,6 +45,61 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         private readonly matchmaking: MatchmakingService,
         private readonly wallet: WalletService,
     ) { }
+
+    /**
+     * Start a turn timer for the current player. When it fires,
+     * the match auto-ends with a timeout for the player whose clock ran out.
+     */
+    private startTurnTimer(matchId: string) {
+        // Clear any existing turn timer for this match
+        this.clearTurnTimer(matchId);
+
+        const match = this.gameService.getActiveMatch(matchId);
+        if (!match) return;
+
+        const timeMs = match.currentTurn === 'A' ? match.timeRemainingA : match.timeRemainingB;
+        // Add a small buffer (500ms) to account for network latency
+        const delayMs = Math.max(timeMs + 500, 1000);
+
+        this.logger.log(`Turn timer set for match ${matchId}: player ${match.currentTurn} has ${timeMs}ms (firing in ${delayMs}ms)`);
+
+        const timer = setTimeout(async () => {
+            this.turnTimers.delete(matchId);
+            const currentMatch = this.gameService.getActiveMatch(matchId);
+            if (!currentMatch) return; // Match already ended
+
+            const timedOutPlayer = currentMatch.currentTurn;
+            this.logger.log(`Turn timer expired for match ${matchId}: player ${timedOutPlayer} timed out`);
+
+            // Capture UIDs before ending match
+            const uidA = this.gameService.getFirebaseUid(matchId, 'A');
+            const uidB = this.gameService.getFirebaseUid(matchId, 'B');
+
+            try {
+                const result = await this.gameService.handleTurnTimeout(matchId, timedOutPlayer);
+                if (result) {
+                    const socketA = uidA ? this.userSockets.get(uidA) : null;
+                    const socketB = uidB ? this.userSockets.get(uidB) : null;
+                    if (socketA) this.server.to(socketA).emit(GameEvent.GAME_OVER, result);
+                    if (socketB) this.server.to(socketB).emit(GameEvent.GAME_OVER, result);
+                    // Notify spectators
+                    this.server.to(`spectate:${matchId}`).emit(GameEvent.SPECTATE_GAME_OVER, result);
+                }
+            } catch (e) {
+                this.logger.error(`Turn timer error for match ${matchId}: ${e}`);
+            }
+        }, delayMs);
+
+        this.turnTimers.set(matchId, timer);
+    }
+
+    private clearTurnTimer(matchId: string) {
+        const timer = this.turnTimers.get(matchId);
+        if (timer) {
+            clearTimeout(timer);
+            this.turnTimers.delete(matchId);
+        }
+    }
 
     handleConnection(client: Socket) {
         const userId = client.handshake.auth?.userId;
@@ -59,6 +116,28 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             if (existingConn?.matchId) {
                 this.logger.log(`Transferring matchId ${existingConn.matchId} from old socket ${existingSocketId} to new socket ${client.id}`);
                 this.connections.set(client.id, { userId, matchId: existingConn.matchId });
+
+                // Emit reconnect state for transferred match
+                const matchState = this.gameService.getActiveMatch(existingConn.matchId);
+                if (matchState) {
+                    const playerRole = matchState.firebaseUidA === userId ? 'A' : 'B';
+                    const isPlayerA = playerRole === 'A';
+                    client.emit(GameEvent.RECONNECT_STATE, {
+                        matchId: existingConn.matchId,
+                        level: matchState.level,
+                        betAmount: matchState.betAmount,
+                        myRole: playerRole,
+                        opponentName: isPlayerA ? matchState.usernameB : matchState.usernameA,
+                        opponentAvatarUrl: isPlayerA ? matchState.avatarB : matchState.avatarA,
+                        opponentId: isPlayerA ? matchState.firebaseUidB : matchState.firebaseUidA,
+                        mySecret: isPlayerA ? matchState.secretA : matchState.secretB,
+                        currentTurn: matchState.currentTurn,
+                        myAttempts: isPlayerA ? matchState.historyA : matchState.historyB,
+                        opponentAttempts: isPlayerA ? matchState.historyB : matchState.historyA,
+                        timeRemainingA: matchState.timeRemainingA,
+                        timeRemainingB: matchState.timeRemainingB,
+                    });
+                }
             } else {
                 this.connections.set(client.id, { userId });
             }
@@ -86,13 +165,20 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 // Send full game state to reconnected player
                 const matchState = this.gameService.getActiveMatch(matchId);
                 if (matchState) {
+                    const playerRole = matchState.firebaseUidA === userId ? 'A' : 'B';
+                    const isPlayerA = playerRole === 'A';
                     client.emit(GameEvent.RECONNECT_STATE, {
                         matchId,
                         level: matchState.level,
                         betAmount: matchState.betAmount,
+                        myRole: playerRole,
+                        opponentName: isPlayerA ? matchState.usernameB : matchState.usernameA,
+                        opponentAvatarUrl: isPlayerA ? matchState.avatarB : matchState.avatarA,
+                        opponentId: isPlayerA ? matchState.firebaseUidB : matchState.firebaseUidA,
+                        mySecret: isPlayerA ? matchState.secretA : matchState.secretB,
                         currentTurn: matchState.currentTurn,
-                        attemptsA: matchState.attemptsA,
-                        attemptsB: matchState.attemptsB,
+                        myAttempts: isPlayerA ? matchState.historyA : matchState.historyB,
+                        opponentAttempts: isPlayerA ? matchState.historyB : matchState.historyA,
                         timeRemainingA: matchState.timeRemainingA,
                         timeRemainingB: matchState.timeRemainingB,
                     });
@@ -178,7 +264,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage(GameEvent.JOIN_QUEUE)
     async handleJoinQueue(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { level: number; betAmount?: number; currencyType: CurrencyType },
+        @MessageBody() data: { level: number; betAmount?: number; currencyType: CurrencyType; timeSeconds?: number },
     ) {
         const conn = this.connections.get(client.id);
         if (!conn) return;
@@ -193,7 +279,11 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             return;
         }
 
-        this.logger.log(`Player ${conn.userId} joining queue: level=${data.level}, bet=${betAmount}, currency=${data.currencyType}`);
+        // Validate and default timeSeconds (3, 5, or 10 minutes)
+        const validTimes = [180, 300, 600];
+        const timeSeconds = validTimes.includes(data.timeSeconds ?? 0) ? data.timeSeconds! : 300;
+
+        this.logger.log(`Player ${conn.userId} joining queue: level=${data.level}, bet=${betAmount}, currency=${data.currencyType}, time=${timeSeconds}s`);
 
         try {
             // Pre-validate balance before entering queue
@@ -210,7 +300,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 // If balance check fails (e.g. user not found), proceed anyway — holdBet will catch it
             }
 
-            const opponent = await this.matchmaking.joinQueue(conn.userId, data.level, betAmount, data.currencyType);
+            const opponent = await this.matchmaking.joinQueue(conn.userId, data.level, betAmount, data.currencyType, timeSeconds);
 
             if (opponent) {
                 // Match found! Create the match
@@ -221,6 +311,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                     data.level,
                     betAmount,
                     data.currencyType,
+                    timeSeconds,
                 );
 
                 // Assign matchId to both players' connections
@@ -347,6 +438,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             if (socketA) this.server.to(socketA).emit(GameEvent.GAME_START, startData);
             if (socketB) this.server.to(socketB).emit(GameEvent.GAME_START, startData);
+
+            // Start turn timer for the first player
+            this.startTurnTimer(data.matchId);
         }
     }
 
@@ -366,6 +460,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const uidB = this.gameService.getFirebaseUid(data.matchId, 'B');
 
         try {
+            // Clear turn timer since player is making a move
+            this.clearTurnTimer(data.matchId);
+
             const result = await this.gameService.processGuess(data.matchId, player, data.guess);
 
             // For game_over, endMatch includes firebaseUids in case the pre-captured ones failed
@@ -378,6 +475,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             this.logger.log(`Guess result: ${result.type} — sending to A(${finalUidA})→${socketA}, B(${finalUidB})→${socketB}`);
 
             if (result.type === 'game_over') {
+                this.clearTurnTimer(data.matchId);
                 if (socketA) this.server.to(socketA).emit(GameEvent.GAME_OVER, result);
                 if (socketB) this.server.to(socketB).emit(GameEvent.GAME_OVER, result);
                 // Notify spectators
@@ -385,6 +483,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             } else {
                 if (socketA) this.server.to(socketA).emit(GameEvent.TURN_RESULT, result);
                 if (socketB) this.server.to(socketB).emit(GameEvent.TURN_RESULT, result);
+                // Start turn timer for the next player
+                this.startTurnTimer(data.matchId);
                 // Forward to spectators
                 const spectatorState = this.gameService.getSpectatorState(data.matchId);
                 this.server.to(`spectate:${data.matchId}`).emit(GameEvent.SPECTATE_UPDATE, {
@@ -422,6 +522,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         this.logger.log(`Player ${conn.userId} (${player}) surrendered match ${data.matchId}`);
 
+        this.clearTurnTimer(data.matchId);
         const result = await this.gameService.handleDisconnect(data.matchId, player);
 
         // Use pre-captured UIDs since match is now deleted

@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.0.2-BETA] — 2026-03-19
+
+### 🔄 Reconexión a Partida
+
+- **Reconexión automática** — Si refrescas la página durante una partida, el servidor detecta tu reconexión (30s de gracia) y restaura todo el estado del juego
+- El servidor envía matchId, rol, oponente, secreto, historial completo de intentos y tiempos restantes
+- El cliente restaura el gameStore y navega automáticamente a `/game`
+
+### ⏰ Auto-Timeout en Turno
+
+- **Timer servidor proactivo** — Cuando un jugador agota su tiempo, el servidor termina la partida automáticamente
+- Ya no se queda pegado en "esperando turno del rival" si al oponente se le acaba el tiempo
+- Timer se inicia en cada turno y se limpia en guess, surrender, game over o desconexión
+
+### ⏱️ Selector de Tiempo
+
+- **3, 5 o 10 minutos** — Los jugadores eligen el tiempo de partida al buscar match
+- Solo emparejas con jugadores que eligieron el mismo tiempo
+- Default: 5 minutos
+
+### 🎮 NumPad Móvil
+
+- **Teclado numérico en pantalla** — Reemplaza el teclado del teléfono para ingresar números
+- Display visual de 4 dígitos, dígitos usados deshabilitados, no permite 0 como primer dígito
+- Integrado en GamePage y PracticePage
+
+### 🎨 UI / Layout
+
+- Layout de Práctica consistente con PvP (game-header-v2, barras de energía)
+- Niveles en una sola fila en desktop (7 columnas)
+- Play-layout al 100% de ancho en desktop
+
 ## [1.0.0-BETA] — 2026-03-17
 
 ### 🎮 Gameplay Core

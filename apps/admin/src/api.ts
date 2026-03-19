@@ -1,7 +1,8 @@
 import { supabase } from './lib/supabaseClient';
 
-const API_BASE = '/api';
-
+const API_BASE = import.meta.env.PROD 
+    ? 'https://phpstack-1279051-6287800.cloudwaysapps.com/api' 
+    : '/api';
 async function request<T>(path: string, method = 'GET', body?: object): Promise<T> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     

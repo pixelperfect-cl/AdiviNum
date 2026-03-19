@@ -12,6 +12,102 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.0.2-BETA',
+        date: '2026-03-19',
+        sections: [
+            {
+                title: 'Reconexión a Partida',
+                icon: '🔄',
+                items: [
+                    'Reconexión automática si refrescas la página durante una partida (30s de gracia)',
+                    'El servidor restaura todo el estado: matchId, rol, oponente, secreto, historial de intentos y tiempos',
+                    'Navegación automática de vuelta a /game al reconectar',
+                ],
+            },
+            {
+                title: 'Auto-Timeout en Turno',
+                icon: '⏰',
+                items: [
+                    'Timer de servidor proactivo — si se agota el tiempo, la partida termina automáticamente',
+                    'Ya no se queda pegado en "esperando turno del rival" cuando al oponente se le acaba el tiempo',
+                    'Timer se reinicia correctamente en cada turno',
+                ],
+            },
+            {
+                title: 'Selector de Tiempo',
+                icon: '⏱️',
+                items: [
+                    'Nuevo selector: 3, 5 o 10 minutos por partida',
+                    'Solo emparejas con jugadores que eligieron el mismo tiempo',
+                    'Default: 5 minutos',
+                ],
+            },
+            {
+                title: 'NumPad Móvil',
+                icon: '🎮',
+                items: [
+                    'Teclado numérico en pantalla — reemplaza el teclado del teléfono',
+                    'Display visual de 4 dígitos con dígitos usados deshabilitados',
+                    'Integrado en partidas PvP y Práctica',
+                ],
+            },
+            {
+                title: 'UI / Layout',
+                icon: '🎨',
+                items: [
+                    'Layout de Práctica consistente con PvP (header, barras de energía)',
+                    'Niveles en una sola fila en desktop',
+                    'Play-layout al 100% de ancho en desktop',
+                ],
+            },
+        ],
+    },
+    {
+        version: '1.0.1-BETA',
+        date: '2026-03-18',
+        sections: [
+            {
+                title: 'Despliegue',
+                icon: '🚀',
+                items: [
+                    'Backend desplegado en Cloudways vía PM2',
+                    'Proxy PHP para API y Socket.io (long-polling)',
+                    'Admin Panel accesible en /admin/',
+                    'URLs de API corregidas para producción',
+                ],
+            },
+            {
+                title: 'Interfaz de Juego',
+                icon: '🎮',
+                items: [
+                    'Nuevo timer de barra de energía (reemplaza circular)',
+                    'Nombres de jugadores visibles sin recorte',
+                    'Tu número secreto visible como referencia durante la partida',
+                    'Scroll horizontal eliminado en pantallas pequeñas',
+                ],
+            },
+            {
+                title: 'Pantalla Jugar',
+                icon: '⚔️',
+                items: [
+                    'Tabs rediseñados con iconos (⚔️ Matchmaking, 🏆 Torneos, 🤖 Práctica)',
+                    'Colores dorados en vez de blanco para tabs activos',
+                    'Mejor espaciado en móvil',
+                    'Botón "¡Jugar!" removido del header en móvil',
+                ],
+            },
+            {
+                title: 'Correcciones',
+                icon: '🐛',
+                items: [
+                    'Endpoint /users/me/history corregido a /users/me/matches',
+                    'Socket.io usa long-polling en producción (bypass Nginx)',
+                    'WebSocket fallback funcional para matchmaking',
+                ],
+            },
+        ],
+    },
+    {
         version: '1.0.0-BETA',
         date: '2026-03-17',
         sections: [

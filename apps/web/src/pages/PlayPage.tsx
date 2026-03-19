@@ -16,6 +16,7 @@ export function PlayPage() {
 
     const levelConfig = LEVELS[selectedLevel - 1];
     const [selectedBet, setSelectedBet] = useState(levelConfig?.betAmountCLP ?? 1000);
+    const [selectedTime, setSelectedTime] = useState(300); // 5 min default
 
     const [activeTab, setActiveTab] = useState<'matchmaking' | 'tournaments' | 'practice'>('matchmaking');
     const [tournaments, setTournaments] = useState<any[]>([]);
@@ -76,7 +77,7 @@ export function PlayPage() {
     };
 
     const handleSearchMatch = () => {
-        joinQueue(selectedLevel, selectedBet, 'VIRTUAL');
+        joinQueue(selectedLevel, selectedBet, 'VIRTUAL', selectedTime);
 
         // Listen for phase change to navigate once match is found
         unsubRef.current = useGameStore.subscribe((state) => {
@@ -103,24 +104,27 @@ export function PlayPage() {
                 Jugar
             </h2>
 
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '24px' }}>
+            <div className="play-tabs">
                 <button
-                    className={`btn ${activeTab === 'matchmaking' ? 'btn-gold' : 'btn-outline'}`}
+                    className={`play-tab ${activeTab === 'matchmaking' ? 'play-tab--active' : ''}`}
                     onClick={() => setActiveTab('matchmaking')}
                 >
-                    Matchmaking
+                    <span className="play-tab__icon">⚔️</span>
+                    <span className="play-tab__label">Matchmaking</span>
                 </button>
                 <button
-                    className={`btn ${activeTab === 'tournaments' ? 'btn-gold' : 'btn-outline'}`}
+                    className={`play-tab ${activeTab === 'tournaments' ? 'play-tab--active' : ''}`}
                     onClick={() => setActiveTab('tournaments')}
                 >
-                    🏆 Torneos
+                    <span className="play-tab__icon">🏆</span>
+                    <span className="play-tab__label">Torneos</span>
                 </button>
                 <button
-                    className={`btn ${activeTab === 'practice' ? 'btn-gold' : 'btn-outline'}`}
+                    className={`play-tab ${activeTab === 'practice' ? 'play-tab--active' : ''}`}
                     onClick={() => setActiveTab('practice')}
                 >
-                    🤖 Práctica
+                    <span className="play-tab__icon">🤖</span>
+                    <span className="play-tab__label">Práctica</span>
                 </button>
             </div>
 
@@ -204,13 +208,29 @@ export function PlayPage() {
                     </div>
                 )}
 
+                {/* Time Selector */}
+                <div className="bet-selector">
+                    <p className="bet-selector__label">⏱️ Tiempo de partida</p>
+                    <div className="bet-selector__options">
+                        {[{ value: 180, label: '3 min' }, { value: 300, label: '5 min' }, { value: 600, label: '10 min' }].map((t) => (
+                            <button
+                                key={t.value}
+                                className={`bet-chip ${selectedTime === t.value ? 'active' : ''}`}
+                                onClick={() => setSelectedTime(t.value)}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Level Info */}
                 {levelConfig && (
                     <div className="card card--gold">
                         <p className="section-subtitle">Nivel {selectedLevel}</p>
                         <div className="stat-row">
                             <span className="stat-label">Tiempo</span>
-                            <span className="stat-value">{Math.floor(levelConfig.timeSeconds / 60)}:{String(levelConfig.timeSeconds % 60).padStart(2, '0')}</span>
+                            <span className="stat-value">{Math.floor(selectedTime / 60)}:{String(selectedTime % 60).padStart(2, '0')}</span>
                         </div>
                         <div className="stat-row">
                             <span className="stat-label">Apuesta</span>

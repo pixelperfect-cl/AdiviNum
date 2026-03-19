@@ -24,6 +24,8 @@ interface ActiveMatch {
     currentTurn: 'A' | 'B';
     attemptsA: number;
     attemptsB: number;
+    historyA: { guess: string; toques: number; famas: number; timestamp: number }[];
+    historyB: { guess: string; toques: number; famas: number; timestamp: number }[];
     timeRemainingA: number; // ms
     timeRemainingB: number; // ms
     lastTurnStartedAt: number; // timestamp
@@ -62,6 +64,7 @@ export class GameService {
         level: number,
         betAmount: number,
         currencyType: CurrencyType,
+        timeSeconds?: number,
     ) {
         // Resolve firebaseUid → Prisma User record
         const [userA, userB] = await Promise.all([
@@ -94,7 +97,7 @@ export class GameService {
             },
         });
 
-        const timeMs = config.timeSeconds * 1000;
+        const timeMs = (timeSeconds ?? config.timeSeconds) * 1000;
         this.activeMatches.set(match.id, {
             id: match.id,
             level,
@@ -113,6 +116,8 @@ export class GameService {
             currentTurn: firstTurn,
             attemptsA: 0,
             attemptsB: 0,
+            historyA: [],
+            historyB: [],
             timeRemainingA: timeMs,
             timeRemainingB: timeMs,
             lastTurnStartedAt: Date.now(),
@@ -280,9 +285,15 @@ export class GameService {
         const secret = player === 'A' ? active.secretB : active.secretA;
         const result = this.engine.processGuess(secret, guess);
 
-        // Increment attempt count
-        if (player === 'A') active.attemptsA++;
-        else active.attemptsB++;
+        // Increment attempt count and record history
+        const now = Date.now();
+        if (player === 'A') {
+            active.attemptsA++;
+            active.historyA.push({ guess, toques: result.toques, famas: result.famas, timestamp: now });
+        } else {
+            active.attemptsB++;
+            active.historyB.push({ guess, toques: result.toques, famas: result.famas, timestamp: now });
+        }
 
         const attemptCount = player === 'A' ? active.attemptsA : active.attemptsB;
 
@@ -462,6 +473,26 @@ export class GameService {
         return this.endMatch(
             matchId,
             disconnectedPlayer === 'A' ? MatchResult.ABANDON_A : MatchResult.ABANDON_B,
+        );
+    }
+
+    /**
+     * Handle turn timeout — the current player ran out of time.
+     */
+    async handleTurnTimeout(matchId: string, timedOutPlayer: 'A' | 'B') {
+        const active = this.activeMatches.get(matchId);
+        if (!active) return null;
+
+        // Zero out remaining time for the timed-out player
+        if (timedOutPlayer === 'A') {
+            active.timeRemainingA = 0;
+        } else {
+            active.timeRemainingB = 0;
+        }
+
+        return this.endMatch(
+            matchId,
+            timedOutPlayer === 'A' ? MatchResult.TIMEOUT_A : MatchResult.TIMEOUT_B,
         );
     }
 

@@ -16,7 +16,7 @@ export function HomePage() {
     const [recentMatches, setRecentMatches] = useState<RecentMatch[]>([]);
 
     useEffect(() => {
-        api.get<RecentMatch[]>('/users/me/history?limit=3')
+        api.get<RecentMatch[]>('/users/me/matches')
             .then(setRecentMatches)
             .catch(console.error);
     }, []);

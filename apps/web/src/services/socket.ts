@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { API_BASE } from './api';
+// API_BASE no longer needed here — socket uses its own URL
 import { useUserStore } from '../stores/userStore';
 import { useGameStore } from '../stores/gameStore';
 import { GameEvent } from '@adivinum/shared';
@@ -52,9 +52,13 @@ export function getSocket(): Socket {
     console.log('[WS] Creating socket connection for user:', userId);
     currentSocketUserId = userId;
 
-    socket = io(`${API_BASE}/game`, {
+    const SOCKET_URL = import.meta.env.PROD
+        ? window.location.origin
+        : 'http://localhost:3000';
+
+    socket = io(`${SOCKET_URL}/game`, {
         auth: { userId },
-        transports: ['websocket', 'polling'],
+        transports: import.meta.env.PROD ? ['polling'] : ['websocket', 'polling'],
         autoConnect: true,
         reconnection: true,
         reconnectionAttempts: 10,
@@ -86,10 +90,10 @@ export function disconnectSocket() {
 /**
  * Join the matchmaking queue.
  */
-export function joinQueue(level: number, betAmount: number, currencyType: string = 'VIRTUAL') {
+export function joinQueue(level: number, betAmount: number, currencyType: string = 'VIRTUAL', timeSeconds: number = 300) {
     const s = getSocket();
-    console.log('[WS] Emitting join_queue:', { level, betAmount, currencyType });
-    s.emit(GameEvent.JOIN_QUEUE, { level, betAmount, currencyType });
+    console.log('[WS] Emitting join_queue:', { level, betAmount, currencyType, timeSeconds });
+    s.emit(GameEvent.JOIN_QUEUE, { level, betAmount, currencyType, timeSeconds });
     useGameStore.getState().setPhase('queue');
 }
 
@@ -368,18 +372,52 @@ function setupListeners(s: Socket) {
         matchId: string;
         level: number;
         betAmount: number;
+        myRole: 'A' | 'B';
+        opponentName: string;
+        opponentAvatarUrl: string | null;
+        opponentId: string;
+        mySecret: string;
         currentTurn: 'A' | 'B';
-        attemptsA: number;
-        attemptsB: number;
+        myAttempts: { guess: string; toques: number; famas: number; timestamp: number }[];
+        opponentAttempts: { guess: string; toques: number; famas: number; timestamp: number }[];
         timeRemainingA: number;
         timeRemainingB: number;
     }) => {
         console.log('[WS] Reconnect state received:', data);
         const gameStore = useGameStore.getState();
+
+        // Restore match data
+        gameStore.setMatchData({
+            matchId: data.matchId,
+            myRole: data.myRole,
+            opponentId: data.opponentId,
+            opponentName: data.opponentName,
+            opponentAvatarUrl: data.opponentAvatarUrl,
+            level: data.level,
+            betAmount: data.betAmount,
+        });
+
+        // Restore secret
+        gameStore.setSecret(data.mySecret);
+
+        // Restore attempts
+        for (const a of data.myAttempts) {
+            gameStore.addMyAttempt(a);
+        }
+        for (const a of data.opponentAttempts) {
+            gameStore.addOpponentAttempt(a);
+        }
+
+        // Set phase to playing and restore turn/times
         gameStore.setPhase('playing');
         gameStore.setCurrentTurn(data.currentTurn);
         gameStore.setTimes(data.timeRemainingA, data.timeRemainingB);
         gameStore.setOpponentDisconnected(false);
+
+        // Navigate to game page if not already there
+        if (!window.location.pathname.includes('/game')) {
+            window.location.href = '/game';
+        }
     });
 
     // Opponent reconnected

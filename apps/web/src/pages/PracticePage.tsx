@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { isValidSecret } from '@adivinum/shared';
+import { NumPad } from '../components/NumPad';
 
 interface Attempt {
     guess: string;
@@ -221,9 +222,15 @@ export function PracticePage() {
 
     return (
         <div className="game-playing fade-in">
-            <div className="game-header">
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                    <span className="practice-badge">🤖 Práctica</span>
+            <div className="game-header-v2">
+                <div className={`player-timer ${isMyTurn ? 'player-timer--active' : ''} player-timer--left`}>
+                    <div className="player-timer__info">
+                        <span className="player-timer__name">Tú</span>
+                        <span className="player-timer__time" style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Práctica</span>
+                    </div>
+                    <div className="player-timer__bar">
+                        <div className="player-timer__bar-fill" style={{ width: '100%', background: 'linear-gradient(90deg, #44cc44, #44cc44cc)' }} />
+                    </div>
                 </div>
                 <div className="game-turn-indicator">
                     {isMyTurn ? (
@@ -231,6 +238,15 @@ export function PracticePage() {
                     ) : (
                         <span className="turn-badge turn-opponent">Turno bot</span>
                     )}
+                </div>
+                <div className={`player-timer ${!isMyTurn ? 'player-timer--active' : ''} player-timer--right`}>
+                    <div className="player-timer__info">
+                        <span className="player-timer__name">Bot 🤖</span>
+                        <span className="player-timer__time" style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>CPU</span>
+                    </div>
+                    <div className="player-timer__bar">
+                        <div className="player-timer__bar-fill" style={{ width: '100%', background: 'linear-gradient(90deg, #44cc44, #44cc44cc)' }} />
+                    </div>
                 </div>
             </div>
 
@@ -276,29 +292,12 @@ export function PracticePage() {
 
             <div className="game-input-area">
                 {isMyTurn ? (
-                    <div className="guess-input-group">
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            className="guess-input"
-                            maxLength={4}
-                            value={guess}
-                            onChange={(e) => {
-                                setGuess(e.target.value.replace(/\D/g, ''));
-                                setGuessError('');
-                            }}
-                            onKeyDown={(e) => e.key === 'Enter' && handleGuess()}
-                            placeholder="Tu intento..."
-                            autoFocus
-                        />
-                        <button
-                            className="btn btn--primary"
-                            onClick={handleGuess}
-                            disabled={guess.length !== 4}
-                        >
-                            Adivinar
-                        </button>
-                    </div>
+                    <NumPad
+                        value={guess}
+                        maxLength={4}
+                        onChange={(v) => { setGuess(v); setGuessError(''); }}
+                        onSubmit={handleGuess}
+                    />
                 ) : (
                     <div style={{ textAlign: 'center', padding: '12px' }}>
                         <div className="spinner" style={{ width: '20px', height: '20px', margin: '0 auto 8px' }} />
