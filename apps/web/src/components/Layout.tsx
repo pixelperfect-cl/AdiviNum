@@ -38,8 +38,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
     const { wallet, user, logout, googleAvatarUrl, googleDisplayName } = useUserStore();
     const [muted, setMuted] = useState(isMuted());
     const [showDropdown, setShowDropdown] = useState(false);
+    const [showSidebarDropdown, setShowSidebarDropdown] = useState(false);
     const [levelInfo, setLevelInfo] = useState<LevelInfo | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const sidebarDropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
     const handleToggleMute = () => {
@@ -53,16 +55,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (user) {
             api.get<LevelInfo>('/users/me/level-info')
-                .then(setLevelInfo)
+                .then(data => setLevelInfo(data || null))
                 .catch(console.error);
         }
     }, [user]);
 
-    // Close dropdown on outside click
+    // Close dropdowns on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
                 setShowDropdown(false);
+            }
+            if (sidebarDropdownRef.current && !sidebarDropdownRef.current.contains(e.target as Node)) {
+                setShowSidebarDropdown(false);
             }
         };
         document.addEventListener('mousedown', handler);
@@ -71,6 +76,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
     const navigateToProfile = (tab?: string) => {
         setShowDropdown(false);
+        setShowSidebarDropdown(false);
         navigate(tab ? `/profile?tab=${tab}` : '/profile');
     };
 
@@ -83,31 +89,56 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <span className="sidebar__tagline">Adivina el número</span>
                 </div>
 
-                {/* User card in sidebar — clickable, goes to profile */}
+                {/* User card in sidebar — click to open dropdown */}
                 {user && (
-                    <div
-                        className="sidebar__user-card"
-                        onClick={() => navigate('/profile')}
-                        style={{ cursor: 'pointer' }}
-                        title="Ver perfil"
-                    >
-                        {googleAvatarUrl ? (
-                            <img
-                                src={googleAvatarUrl}
-                                alt="avatar"
-                                className="avatar"
-                                style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
-                                referrerPolicy="no-referrer"
-                            />
-                        ) : (
-                            <div className="avatar">
-                                {displayName.charAt(0).toUpperCase()}
+                    <div className="sidebar__user-card-wrapper" ref={sidebarDropdownRef}>
+                        <div
+                            className="sidebar__user-card"
+                            onClick={() => setShowSidebarDropdown(!showSidebarDropdown)}
+                            style={{ cursor: 'pointer' }}
+                            title="Mi perfil"
+                        >
+                            {googleAvatarUrl ? (
+                                <img
+                                    src={googleAvatarUrl}
+                                    alt="avatar"
+                                    className="avatar"
+                                    style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
+                                    referrerPolicy="no-referrer"
+                                />
+                            ) : (
+                                <div className="avatar">
+                                    {displayName.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                            <div className="sidebar__user-info">
+                                <span className="sidebar__username">{displayName}</span>
+                                <span className="sidebar__user-level">⭐ Nivel {user.currentLevel}</span>
+                            </div>
+                        </div>
+                        {/* Sidebar dropdown */}
+                        {showSidebarDropdown && (
+                            <div className="sidebar__dropdown">
+                                {PROFILE_LINKS.map(link => (
+                                    <button
+                                        key={link.tab}
+                                        className="avatar-dropdown__item"
+                                        onClick={() => navigateToProfile(link.tab)}
+                                    >
+                                        <span>{link.icon}</span>
+                                        <span>{link.label}</span>
+                                    </button>
+                                ))}
+                                <div className="avatar-dropdown__divider" />
+                                <button
+                                    className="avatar-dropdown__item avatar-dropdown__item--danger"
+                                    onClick={() => { setShowSidebarDropdown(false); logout(); }}
+                                >
+                                    <span>🚪</span>
+                                    <span>Cerrar Sesión</span>
+                                </button>
                             </div>
                         )}
-                        <div className="sidebar__user-info">
-                            <span className="sidebar__username">{displayName}</span>
-                            <span className="sidebar__user-level">⭐ Nivel {user.currentLevel}</span>
-                        </div>
                     </div>
                 )}
 

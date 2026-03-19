@@ -35,7 +35,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         throw new Error(error.message || `API Error: ${res.status}`);
     }
 
-    return res.json().catch(() => null as T);
+    const text = await res.text();
+    if (!text) return null as T;
+    return JSON.parse(text);
 }
 
 export const api = {

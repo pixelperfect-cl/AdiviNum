@@ -122,10 +122,10 @@ export function HomePage() {
 
     useEffect(() => {
         api.get<MatchHistory[]>('/users/me/matches')
-            .then(setMatches)
+            .then(data => setMatches(data || []))
             .catch(console.error);
         api.get<LevelInfo>('/users/me/level-info')
-            .then(setLevelInfo)
+            .then(data => setLevelInfo(data || null))
             .catch(console.error);
     }, []);
 

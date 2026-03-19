@@ -173,6 +173,11 @@ a:hover {
         margin-top: 2px;
     }
 
+    .sidebar__user-card-wrapper {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
     .sidebar__user-card {
         display: flex;
         align-items: center;
@@ -181,7 +186,20 @@ a:hover {
         background: var(--surface);
         border-radius: var(--radius-lg);
         border: 1px solid var(--border);
-        margin-bottom: 20px;
+    }
+
+    .sidebar__dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        z-index: 100;
+        padding: 6px 0;
+        animation: dropdown-in 0.15s ease-out;
     }
 
     .sidebar__user-info {

@@ -207,10 +207,10 @@ export function ProfilePage() {
 
     useEffect(() => {
         api.get<EloPoint[]>('/users/me/elo-history')
-            .then(setEloHistory)
+            .then(data => setEloHistory(data || []))
             .catch(console.error);
         api.get<Achievement[]>('/users/me/achievements')
-            .then(setAchievements)
+            .then(data => setAchievements(data || []))
             .catch(console.error);
     }, []);
 
@@ -227,7 +227,7 @@ export function ProfilePage() {
         if (activeTab === 'history' && matchHistory.length === 0 && !historyLoading) {
             setHistoryLoading(true);
             api.get<MatchRecord[]>('/users/me/matches')
-                .then(setMatchHistory)
+                .then(data => setMatchHistory(data || []))
                 .catch(console.error)
                 .finally(() => setHistoryLoading(false));
         }
