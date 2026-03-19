@@ -33,8 +33,8 @@ npm install --production=false
 echo ""
 echo "🔧 [3/8] Generating Prisma client & running migrations..."
 cd apps/server
-npx prisma generate
-npx prisma migrate deploy
+npx prisma generate --schema=prisma/schema.prisma
+npx prisma migrate deploy --schema=prisma/schema.prisma
 cd $APP_DIR
 
 # 4. Build shared (must be first — others depend on it)
@@ -103,5 +103,5 @@ fi
 
 echo ""
 echo "=========================="
-echo "🎮 AdiviNum v1.0.3-BETA is live!"
+echo "🎮 AdiviNum v1.0.4-BETA is live!"
 echo "=========================="
