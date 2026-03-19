@@ -99,7 +99,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {/* Version badge */}
                 <NavLink to="/changelog" className="sidebar__version-badge">
                     <span className="sidebar__version-badge-icon">🎮</span>
-                    <span className="sidebar__version-badge-text">AdiviNum</span>
+                    <span className="sidebar__version-badge-text">AdiviNum v1.0.3</span>
                     <span className="sidebar__version-badge-tag">BETA</span>
                 </NavLink>
 

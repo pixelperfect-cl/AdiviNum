@@ -12,6 +12,48 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.0.3-BETA',
+        date: '2026-03-19',
+        sections: [
+            {
+                title: 'Estadísticas del Proyecto',
+                icon: '📊',
+                items: [
+                    '~18,500 líneas de código (TypeScript, TSX, CSS, Prisma, Shell)',
+                    '~34 horas de desarrollo acumuladas',
+                ],
+            },
+            {
+                title: 'Deploy Automatizado',
+                icon: '🚀',
+                items: [
+                    'Script de deploy (deploy.sh) — un solo comando para deployar todo en Cloudways',
+                    'NVM integrado para usar Node 20+ en el servidor',
+                    'Build automático: shared → web → admin → server',
+                    'Health check post-deploy',
+                ],
+            },
+            {
+                title: 'UI / Layout',
+                icon: '🎨',
+                items: [
+                    'Badge de versión premium en sidebar con "🎮 AdiviNum v1.0.3 BETA"',
+                    'Niveles desktop — 10 columnas en una sola línea',
+                    'Apuesta + Tiempo — Layout 2 columnas con opciones apiladas verticalmente',
+                    'Google Login configurado con Supabase real',
+                ],
+            },
+            {
+                title: 'Auth',
+                icon: '🔐',
+                items: [
+                    'Dev players habilitados en producción para testing',
+                    'Guard refactorizado: Supabase token → dev-user header → 401',
+                ],
+            },
+        ],
+    },
+    {
         version: '1.0.2-BETA',
         date: '2026-03-19',
         sections: [

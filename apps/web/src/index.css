@@ -1070,6 +1070,10 @@ a:hover {
     .play-config-row > .bet-selector {
         flex: 1;
     }
+
+    .play-config-row .bet-selector__options {
+        flex-direction: column;
+    }
 }
 
 /* Bet selector */

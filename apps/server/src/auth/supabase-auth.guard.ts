@@ -29,32 +29,32 @@ export class SupabaseAuthGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
+        const authHeader = request.headers.authorization;
 
-        // Dev mode: if a real Bearer token is present, validate it.
-        // Otherwise, fall back to the dev-user bypass.
-        if (this.isDev) {
-            const authHeader = request.headers.authorization;
-
-            if (authHeader && authHeader.startsWith('Bearer ') && this.supabase) {
-                const token = authHeader.split('Bearer ')[1];
-                try {
-                    const { data: { user }, error } = await this.supabase.auth.getUser(token);
-                    if (!error && user) {
-                        const meta = user.user_metadata || {};
-                        request.user = {
-                            uid: user.id,
-                            email: user.email,
-                            displayName: meta.full_name || meta.name || null,
-                            avatarUrl: meta.avatar_url || meta.picture || null,
-                        };
-                        return true;
-                    }
-                } catch {
-                    // Token invalid, fall through to dev bypass
+        // 1) Try real Supabase token first (works in any environment)
+        if (authHeader && authHeader.startsWith('Bearer ') && this.supabase) {
+            const token = authHeader.split('Bearer ')[1];
+            try {
+                const { data: { user }, error } = await this.supabase.auth.getUser(token);
+                if (!error && user) {
+                    const meta = user.user_metadata || {};
+                    request.user = {
+                        uid: user.id,
+                        email: user.email,
+                        displayName: meta.full_name || meta.name || null,
+                        avatarUrl: meta.avatar_url || meta.picture || null,
+                    };
+                    return true;
                 }
+            } catch {
+                // Token invalid, fall through
             }
+        }
 
-            const devUser = request.headers['x-dev-user'] || 'player';
+        // 2) Dev player bypass — allowed when x-dev-user header is present
+        const devUserHeader = request.headers['x-dev-user'];
+        if (devUserHeader || this.isDev) {
+            const devUser = devUserHeader || 'player';
             const uidMap: Record<string, string> = {
                 player: 'dev-player-uid',
                 admin: 'dev-admin-uid',
@@ -67,33 +67,7 @@ export class SupabaseAuthGuard implements CanActivate {
             return true;
         }
 
-        const authHeader = request.headers.authorization;
-
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            throw new UnauthorizedException('Missing or invalid authorization header');
-        }
-
-        const token = authHeader.split('Bearer ')[1];
-
-        if (!this.supabase) {
-           throw new UnauthorizedException('Supabase client not initialized');
-        }
-
-        try {
-            const { data: { user }, error } = await this.supabase.auth.getUser(token);
-            if (error || !user) {
-                throw new UnauthorizedException('Invalid or expired token');
-            }
-            const meta = user.user_metadata || {};
-            request.user = {
-                uid: user.id,
-                email: user.email,
-                displayName: meta.full_name || meta.name || null,
-                avatarUrl: meta.avatar_url || meta.picture || null,
-            };
-            return true;
-        } catch {
-            throw new UnauthorizedException('Invalid or expired token');
-        }
+        // 3) No valid auth
+        throw new UnauthorizedException('Missing or invalid authorization header');
     }
 }

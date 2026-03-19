@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.0.3-BETA] — 2026-03-19
+
+### 📊 Estadísticas del Proyecto
+- **~18,500 líneas de código** (TypeScript, TSX, CSS, Prisma, Shell)
+- **~34 horas de desarrollo** acumuladas
+
+### 🚀 Deploy Automatizado
+- **Script de deploy** (`deploy/deploy.sh`) — un solo comando para deployar todo en Cloudways
+- NVM integrado para usar Node 20+ en el servidor
+- Build automático de shared → web → admin → server
+- Copia automática de assets a `public_html/`
+- Health check post-deploy
+
+### 🎨 UI / Layout
+- **Badge de versión** premium en sidebar con "🎮 AdiviNum v1.0.3 BETA"
+- **Niveles desktop** — 10 columnas en una sola línea (antes 7)
+- **Apuesta + Tiempo** — Layout 2 columnas en desktop, opciones apiladas verticalmente
+- Google Login configurado con Supabase real (fix placeholder URL)
+
+### 🔐 Auth
+- **Dev players habilitados** en producción para testing (Player 1 / Player 2)
+- Guard refactorizado: Supabase token → dev-user header → 401
+
 ## [1.0.2-BETA] — 2026-03-19
 
 ### 🔄 Reconexión a Partida
