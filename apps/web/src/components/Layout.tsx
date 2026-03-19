@@ -7,7 +7,6 @@ import { api } from '../services/api';
 const NAV_ITEMS = [
     { to: '/', icon: '🏠', label: 'Inicio', end: true },
     { to: '/play', icon: '🎮', label: 'Jugar' },
-    { to: '/profile', icon: '👤', label: 'Perfil' },
     { to: '/spectate', icon: '👁️', label: 'Espectador' },
     { to: '/ranking', icon: '🏆', label: 'Ranking' },
     { to: '/friends', icon: '👥', label: 'Amigos' },

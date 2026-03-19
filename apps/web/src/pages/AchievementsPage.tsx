@@ -17,7 +17,7 @@ export function AchievementsPage() {
 
     useEffect(() => {
         api.get<Achievement[]>('/users/me/achievements')
-            .then(setAchievements)
+            .then(data => setAchievements(data || []))
             .catch(console.error)
             .finally(() => setLoading(false));
     }, []);

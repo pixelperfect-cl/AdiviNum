@@ -178,8 +178,13 @@ export const useUserStore = create<UserStore>((set, get) => ({
         try {
             set({ isLoading: true, error: null });
             const data = await api.post<{ user: User; wallet: Wallet }>('/auth/login');
-            set({ user: data.user, wallet: data.wallet, isLoading: false, isAuthenticated: true });
+            if (data && data.user) {
+                set({ user: data.user, wallet: data.wallet || null, isLoading: false, isAuthenticated: true });
+            } else {
+                set({ isLoading: false, error: 'No se pudo cargar el perfil' });
+            }
         } catch (err) {
+            console.error('fetchUser failed:', err);
             set({ error: (err as Error).message, isLoading: false });
         }
     },

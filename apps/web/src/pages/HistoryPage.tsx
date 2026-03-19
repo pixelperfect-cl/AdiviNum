@@ -49,7 +49,7 @@ export function HistoryPage() {
 
     useEffect(() => {
         api.get<MatchRecord[]>('/users/me/matches')
-            .then(setMatches)
+            .then(data => setMatches(data || []))
             .catch(console.error)
             .finally(() => setLoading(false));
     }, []);
