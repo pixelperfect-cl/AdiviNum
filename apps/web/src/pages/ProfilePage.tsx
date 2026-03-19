@@ -235,8 +235,9 @@ export function ProfilePage() {
 
     if (!user) {
         return (
-            <div className="loading-page">
-                <div className="spinner" />
+            <div className="page" style={{ padding: '40px 20px', textAlign: 'center' }}>
+                <p style={{ fontSize: '1.1rem', marginBottom: '16px' }}>⚠️ No se pudo cargar tu perfil</p>
+                <button className="btn btn--primary" onClick={() => window.location.reload()}>Reintentar</button>
             </div>
         );
     }

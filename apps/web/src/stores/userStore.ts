@@ -104,9 +104,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
             // Sync with our backend
             const data = await api.post<{ user: User; wallet: Wallet }>('/auth/login');
+            if (!data?.user) throw new Error('No se pudo obtener el perfil del servidor');
             set({
                 user: data.user,
-                wallet: data.wallet,
+                wallet: data.wallet || null,
                 isLoading: false,
                 isAuthenticated: true,
             });
@@ -142,10 +143,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
             
             // Login to get full profile and wallet
             const data = await api.post<{ user: User; wallet: Wallet }>('/auth/login');
-
+            if (!data?.user) throw new Error('No se pudo obtener el perfil del servidor');
             set({
                 user: data.user,
-                wallet: data.wallet,
+                wallet: data.wallet || null,
                 isLoading: false,
                 isAuthenticated: true,
             });
@@ -163,9 +164,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
             localStorage.setItem('x-dev-user', devUser);
 
             const data = await api.post<{ user: User; wallet: Wallet }>('/auth/login');
+            if (!data?.user) throw new Error('No se pudo obtener el perfil del servidor');
             set({
                 user: data.user,
-                wallet: data.wallet,
+                wallet: data.wallet || null,
                 isLoading: false,
                 isAuthenticated: true,
             });
