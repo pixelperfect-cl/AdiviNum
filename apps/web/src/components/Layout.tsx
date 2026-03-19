@@ -9,6 +9,7 @@ const NAV_ITEMS = [
     { to: '/play', icon: '🎮', label: 'Jugar' },
     { to: '/spectate', icon: '👁️', label: 'Espectador' },
     { to: '/ranking', icon: '🏆', label: 'Ranking' },
+    { to: '/history', icon: '📋', label: 'Historial' },
     { to: '/friends', icon: '👥', label: 'Amigos' },
 ];
 
