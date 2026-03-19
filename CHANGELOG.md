@@ -1,10 +1,8 @@
 # Changelog
 
-## [1.0.3-BETA] — 2026-03-19
+> 📊 **~18,500 líneas de código** · ⏱️ **~480h desarrollo estimado**
 
-### 📊 Estadísticas del Proyecto
-- **~18,500 líneas de código** (TypeScript, TSX, CSS, Prisma, Shell)
-- **~480 horas de desarrollo estimadas** (equivalente humano)
+## [1.0.3-BETA] — 2026-03-19
 
 ### 🚀 Deploy Automatizado
 - **Script de deploy** (`deploy/deploy.sh`) — un solo comando para deployar todo en Cloudways

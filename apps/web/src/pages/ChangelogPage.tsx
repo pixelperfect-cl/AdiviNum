@@ -16,14 +16,6 @@ const CHANGELOG: ChangelogEntry[] = [
         date: '2026-03-19',
         sections: [
             {
-                title: 'Estadísticas del Proyecto',
-                icon: '📊',
-                items: [
-                    '~18,500 líneas de código (TypeScript, TSX, CSS, Prisma, Shell)',
-                    '~480 horas de desarrollo estimadas (equivalente humano)',
-                ],
-            },
-            {
                 title: 'Deploy Automatizado',
                 icon: '🚀',
                 items: [
@@ -257,6 +249,46 @@ export function ChangelogPage() {
             <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '24px' }}>
                 Notas de versión y actualizaciones
             </p>
+
+            {/* Stats badges */}
+            <div style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center',
+                marginBottom: '24px',
+                flexWrap: 'wrap',
+            }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 18px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(234, 179, 8, 0.03))',
+                    border: '1px solid rgba(234, 179, 8, 0.2)',
+                }}>
+                    <span style={{ fontSize: '1.2rem' }}>💻</span>
+                    <div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~18,500</div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Líneas de código</div>
+                    </div>
+                </div>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 18px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(234, 179, 8, 0.03))',
+                    border: '1px solid rgba(234, 179, 8, 0.2)',
+                }}>
+                    <span style={{ fontSize: '1.2rem' }}>⏱️</span>
+                    <div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~480h</div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Desarrollo estimado</div>
+                    </div>
+                </div>
+            </div>
 
             {CHANGELOG.map((entry) => (
                 <ChangelogEntryCard key={entry.version} entry={entry} />

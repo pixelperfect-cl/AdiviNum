@@ -103,6 +103,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <span className="sidebar__version-badge-tag">BETA</span>
                 </NavLink>
 
+                <a
+                    href="https://pixelperfect.cl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sidebar__powered-by"
+                >
+                    Powered by <strong>Pixel Perfect</strong>
+                </a>
+
                 {/* Logout button in sidebar */}
                 <button className="sidebar__logout" onClick={() => logout()}>
                     🚪 Cerrar Sesión
@@ -177,6 +186,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <main className="app-main">
                     {children}
                 </main>
+
+                {/* Footer — visible on mobile */}
+                <footer className="app-footer mobile-only">
+                    <NavLink to="/changelog" className="app-footer__version">
+                        🎮 AdiviNum v1.0.3 BETA
+                    </NavLink>
+                    <a
+                        href="https://pixelperfect.cl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="app-footer__powered"
+                    >
+                        Powered by <strong>Pixel Perfect</strong>
+                    </a>
+                </footer>
             </div>
 
             {/* Bottom navigation — visible only on mobile */}
