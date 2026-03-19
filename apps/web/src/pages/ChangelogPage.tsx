@@ -20,7 +20,7 @@ const CHANGELOG: ChangelogEntry[] = [
                 icon: '📊',
                 items: [
                     '~18,500 líneas de código (TypeScript, TSX, CSS, Prisma, Shell)',
-                    '~34 horas de desarrollo acumuladas',
+                    '~480 horas de desarrollo estimadas (equivalente humano)',
                 ],
             },
             {
