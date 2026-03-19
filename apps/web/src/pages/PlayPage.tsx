@@ -190,37 +190,40 @@ export function PlayPage() {
                     })}
                 </div>
 
-                {/* Bet Selector */}
-                {levelConfig && (
+                {/* Bet + Time Selectors — side by side on desktop */}
+                <div className="play-config-row">
+                    {/* Bet Selector */}
+                    {levelConfig && (
+                        <div className="bet-selector">
+                            <p className="bet-selector__label">Elige tu apuesta</p>
+                            <div className="bet-selector__options">
+                                {levelConfig.betOptions.map((bet) => (
+                                    <button
+                                        key={bet}
+                                        className={`bet-chip ${selectedBet === bet ? 'active' : ''}`}
+                                        onClick={() => setSelectedBet(bet)}
+                                    >
+                                        ${bet.toLocaleString()}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Time Selector */}
                     <div className="bet-selector">
-                        <p className="bet-selector__label">Elige tu apuesta</p>
+                        <p className="bet-selector__label">⏱️ Tiempo de partida</p>
                         <div className="bet-selector__options">
-                            {levelConfig.betOptions.map((bet) => (
+                            {[{ value: 180, label: '3 min' }, { value: 300, label: '5 min' }, { value: 600, label: '10 min' }].map((t) => (
                                 <button
-                                    key={bet}
-                                    className={`bet-chip ${selectedBet === bet ? 'active' : ''}`}
-                                    onClick={() => setSelectedBet(bet)}
+                                    key={t.value}
+                                    className={`bet-chip ${selectedTime === t.value ? 'active' : ''}`}
+                                    onClick={() => setSelectedTime(t.value)}
                                 >
-                                    ${bet.toLocaleString()}
+                                    {t.label}
                                 </button>
                             ))}
                         </div>
-                    </div>
-                )}
-
-                {/* Time Selector */}
-                <div className="bet-selector">
-                    <p className="bet-selector__label">⏱️ Tiempo de partida</p>
-                    <div className="bet-selector__options">
-                        {[{ value: 180, label: '3 min' }, { value: 300, label: '5 min' }, { value: 600, label: '10 min' }].map((t) => (
-                            <button
-                                key={t.value}
-                                className={`bet-chip ${selectedTime === t.value ? 'active' : ''}`}
-                                onClick={() => setSelectedTime(t.value)}
-                            >
-                                {t.label}
-                            </button>
-                        ))}
                     </div>
                 </div>
 

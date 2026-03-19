@@ -290,21 +290,45 @@ a:hover {
         color: var(--error);
     }
 
-    .sidebar__version-link {
-        display: block;
-        text-align: center;
-        font-size: 0.7rem;
-        color: var(--text-muted);
+    .sidebar__version-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
         text-decoration: none;
-        padding: 8px 0 0;
+        padding: 8px 12px;
         margin-top: 8px;
-        opacity: 0.6;
-        transition: all 0.2s;
+        border-radius: var(--radius-md);
+        background: linear-gradient(135deg, rgba(234, 179, 8, 0.08), rgba(234, 179, 8, 0.02));
+        border: 1px solid rgba(234, 179, 8, 0.15);
+        transition: all 0.3s ease;
     }
 
-    .sidebar__version-link:hover {
-        opacity: 1;
+    .sidebar__version-badge:hover {
+        background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05));
+        border-color: rgba(234, 179, 8, 0.35);
+        box-shadow: 0 0 12px rgba(234, 179, 8, 0.1);
+    }
+
+    .sidebar__version-badge-icon {
+        font-size: 1rem;
+    }
+
+    .sidebar__version-badge-text {
+        font-size: 0.75rem;
+        font-weight: 700;
         color: var(--gold);
+        letter-spacing: 0.04em;
+    }
+
+    .sidebar__version-badge-tag {
+        font-size: 0.55rem;
+        font-weight: 800;
+        color: var(--bg);
+        background: var(--gold);
+        padding: 1px 5px;
+        border-radius: 4px;
+        letter-spacing: 0.08em;
     }
 }
 
@@ -694,7 +718,7 @@ a:hover {
 
 @media (min-width: 1024px) {
     .level-grid {
-        grid-template-columns: repeat(7, 1fr);
+        grid-template-columns: repeat(10, 1fr);
         gap: 10px;
     }
 
@@ -1027,6 +1051,24 @@ a:hover {
 @media (min-width: 1024px) {
     .play-layout {
         max-width: 100%;
+    }
+}
+
+/* Play config row — 2 columns on desktop */
+.play-config-row {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+@media (min-width: 768px) {
+    .play-config-row {
+        flex-direction: row;
+        gap: 16px;
+    }
+
+    .play-config-row > .bet-selector {
+        flex: 1;
     }
 }
 
