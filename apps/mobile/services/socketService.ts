@@ -61,7 +61,11 @@ export function connectSocket(userId: string) {
     });
 
     socket.on(GameEvent.GAME_OVER, (data) => {
-        store.setGameOver(data.result, data.winnerId, data.winnerPrize || 0);
+        store.setGameOver(data.result, data.winnerId, data.winnerPrize || 0, data.winnerFirebaseUid);
+    });
+
+    socket.on(GameEvent.LAST_CHANCE, (_data) => {
+        useGameStore.getState().setLastChance(true);
     });
 
     socket.on(GameEvent.ERROR, (data) => {

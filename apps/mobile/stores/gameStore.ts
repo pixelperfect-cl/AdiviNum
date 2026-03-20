@@ -35,7 +35,9 @@ interface GameState {
     // Result
     result: string | null;
     winnerId: string | null;
+    winnerFirebaseUid: string | null;
     winnerPrize: number;
+    isLastChance: boolean;
 
     // Actions
     setPhase: (phase: GamePhase) => void;
@@ -50,7 +52,8 @@ interface GameState {
     setTimes: (a: number, b: number) => void;
     addMyAttempt: (attempt: AttemptResult) => void;
     addOpponentAttempt: (attempt: AttemptResult) => void;
-    setGameOver: (result: string, winnerId: string | null, prize: number) => void;
+    setGameOver: (result: string, winnerId: string | null, prize: number, winnerFirebaseUid?: string | null) => void;
+    setLastChance: (isLastChance: boolean) => void;
     setLevel: (level: number) => void;
     setCurrencyType: (type: CurrencyType) => void;
     resetGame: () => void;
@@ -75,7 +78,9 @@ const initialState = {
     opponentTimeRemaining: 0,
     result: null,
     winnerId: null,
+    winnerFirebaseUid: null,
     winnerPrize: 0,
+    isLastChance: false,
 };
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -109,9 +114,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     addOpponentAttempt: (attempt) =>
         set((state) => ({ opponentAttempts: [...state.opponentAttempts, attempt] })),
 
-    setGameOver: (result, winnerId, winnerPrize) =>
-        set({ phase: 'game_over', result, winnerId, winnerPrize }),
+    setGameOver: (result, winnerId, winnerPrize, winnerFirebaseUid) =>
+        set({ phase: 'game_over', result, winnerId, winnerPrize, winnerFirebaseUid: winnerFirebaseUid ?? null, isLastChance: false }),
 
+    setLastChance: (isLastChance) => set({ isLastChance }),
     setLevel: (level) => set({ level }),
     setCurrencyType: (currencyType) => set({ currencyType }),
     resetGame: () => set(initialState),

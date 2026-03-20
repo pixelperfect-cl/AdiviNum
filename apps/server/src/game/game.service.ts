@@ -30,6 +30,8 @@ interface ActiveMatch {
     timeRemainingA: number; // ms
     timeRemainingB: number; // ms
     lastTurnStartedAt: number; // timestamp
+    playerAGuessed: boolean;  // A already guessed the secret
+    playerBGuessed: boolean;  // B already guessed the secret
 }
 
 @Injectable()
@@ -122,7 +124,9 @@ export class GameService {
             historyB: [],
             timeRemainingA: timeMs,
             timeRemainingB: timeMs,
-            lastTurnStartedAt: Date.now(),
+            lastTurnStartedAt: 0, // Set when both secrets are set
+            playerAGuessed: false,
+            playerBGuessed: false,
         });
 
         return {
@@ -313,6 +317,40 @@ export class GameService {
 
         // Check for win (4 Famas)
         if (this.engine.isWinningGuess(secret, guess)) {
+            // Check if opponent already guessed on their turn — both guessed = draw
+            if (player === 'A' && active.playerBGuessed) {
+                return this.endMatch(matchId, MatchResult.DRAW);
+            }
+            if (player === 'B' && active.playerAGuessed) {
+                return this.endMatch(matchId, MatchResult.DRAW);
+            }
+
+            // Fairness: if this player went first this round (has more attempts),
+            // the opponent deserves a last chance to equalize
+            const opponentAttempts = player === 'A' ? active.attemptsB : active.attemptsA;
+            if (attemptCount > opponentAttempts) {
+                // Mark that this player guessed — give opponent one last turn
+                if (player === 'A') active.playerAGuessed = true;
+                else active.playerBGuessed = true;
+
+                // Switch turn to opponent for their last chance
+                active.currentTurn = player === 'A' ? 'B' : 'A';
+                active.lastTurnStartedAt = Date.now();
+
+                return {
+                    type: 'last_chance' as const,
+                    guess,
+                    toques: result.toques,
+                    famas: result.famas,
+                    attemptNumber: attemptCount,
+                    nextTurn: active.currentTurn,
+                    timeRemainingA: active.timeRemainingA,
+                    timeRemainingB: active.timeRemainingB,
+                    guessedByPlayer: player,
+                };
+            }
+
+            // Opponent already had equal or more attempts — win immediately
             return this.endMatch(matchId, player === 'A' ? MatchResult.PLAYER_A_WINS : MatchResult.PLAYER_B_WINS);
         }
 
@@ -463,12 +501,18 @@ export class GameService {
 
         this.logger.log(`Match ${matchId} ended: ${result}`);
 
+        // Resolve winnerFirebaseUid for client-side comparison
+        let winnerFirebaseUid: string | null = null;
+        if (winnerId === active.playerAId) winnerFirebaseUid = active.firebaseUidA;
+        else if (winnerId === active.playerBId) winnerFirebaseUid = active.firebaseUidB;
+
         return {
             type: 'game_over' as const,
             result,
             winnerId,
             loserId,
             winnerPrize,
+            winnerFirebaseUid,
             commission,
             firebaseUidA: active.firebaseUidA,
             firebaseUidB: active.firebaseUidB,

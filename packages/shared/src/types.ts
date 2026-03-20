@@ -162,5 +162,7 @@ export enum GameEvent {
   CHALLENGE_RECEIVED = 'challenge_received',
   CHALLENGE_ACCEPTED = 'challenge_accepted',
   CHALLENGE_DECLINED = 'challenge_declined',
+  LAST_CHANCE = 'last_chance',
+  SECRET_TIMEOUT = 'secret_timeout',
   ERROR = 'game_error',
 }

@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, FontSize, BorderRadius } from '@/constants/theme';
 import { useGameStore } from '@/stores/gameStore';
 import { useUserStore } from '@/stores/userStore';
-import { setSecret, makeGuess, surrender } from '@/services/socketService';
+import { setSecret, makeGuess, surrender, joinQueue } from '@/services/socketService';
 import { isValidSecret, isValidGuess, getLevelConfig } from '@adivinum/shared';
 
 export default function GameScreen() {
@@ -28,7 +28,9 @@ export default function GameScreen() {
     const level = useGameStore((s) => s.level);
     const result = useGameStore((s) => s.result);
     const winnerId = useGameStore((s) => s.winnerId);
+    const winnerFirebaseUid = useGameStore((s) => s.winnerFirebaseUid);
     const winnerPrize = useGameStore((s) => s.winnerPrize);
+    const isLastChance = useGameStore((s) => s.isLastChance);
     const resetGame = useGameStore((s) => s.resetGame);
     const myUserId = useUserStore((s) => s.user?.id);
 
@@ -119,28 +121,66 @@ export default function GameScreen() {
         router.replace('/(tabs)');
     };
 
-    const iWon = winnerId === myUserId;
+    const handleSearchMatch = () => {
+        resetGame();
+        router.replace('/(tabs)/play');
+    };
+
+    // Use winnerFirebaseUid (socket-level ID) for correct comparison
+    const iWon = winnerFirebaseUid ? winnerFirebaseUid === myUserId : winnerId === myUserId;
+    const isDraw = result?.includes('DRAW');
+    const isTimeout = result?.includes('TIMEOUT');
+    const isAbandon = result?.includes('ABANDON');
+    const isSecretTimeout = isTimeout && !(myAttempts.length > 0 || opponentAttempts.length > 0);
 
     // ---- Game Over Screen ----
     if (phase === 'game_over') {
+        let emoji = '😔';
+        let title = 'Derrota';
+        let subtitle = '';
+        let gradientColors: [string, string] = ['#0A0E1A', '#2E0A0A'];
+
+        if (isDraw) {
+            emoji = '🤝';
+            title = '¡EMPATE!';
+            subtitle = 'Ambos adivinaron el número';
+            gradientColors = ['#0A0E1A', '#1A1A0A'];
+        } else if (iWon) {
+            emoji = '🏆';
+            title = '¡VICTORIA!';
+            gradientColors = ['#0A0E1A', '#1A2E0A'];
+            if (isTimeout) subtitle = 'Tu oponente se quedó sin tiempo';
+            else if (isAbandon) subtitle = 'Tu oponente abandonó la partida';
+            else subtitle = '¡Adivinaste el número secreto!';
+        } else {
+            emoji = '😔';
+            title = 'Derrota';
+            if (isSecretTimeout) subtitle = 'No fijaste tu número secreto a tiempo';
+            else if (isTimeout) subtitle = 'Se te acabó el tiempo';
+            else if (isAbandon) subtitle = 'Abandonaste la partida';
+            else subtitle = 'Tu oponente adivinó tu número';
+        }
+
         return (
             <LinearGradient
-                colors={iWon ? ['#0A0E1A', '#1A2E0A'] : ['#0A0E1A', '#2E0A0A']}
+                colors={gradientColors}
                 style={styles.container}
             >
                 <View style={styles.gameOverContainer}>
-                    <Text style={styles.gameOverEmoji}>{iWon ? '🏆' : '😔'}</Text>
-                    <Text style={styles.gameOverTitle}>
-                        {iWon ? '¡VICTORIA!' : 'Derrota'}
-                    </Text>
-                    <Text style={styles.gameOverResult}>
-                        {result?.includes('DRAW') ? 'Empate — ambos pierden el 50%' :
-                            result?.includes('TIMEOUT') ? 'Fin por tiempo' :
-                                result?.includes('ABANDON') ? 'Abandono' : ''}
-                    </Text>
+                    <Text style={styles.gameOverEmoji}>{emoji}</Text>
+                    <Text style={styles.gameOverTitle}>{title}</Text>
+                    <Text style={styles.gameOverResult}>{subtitle}</Text>
                     {iWon && winnerPrize > 0 && (
                         <Text style={styles.prizeText}>+${winnerPrize.toLocaleString()}</Text>
                     )}
+                    <TouchableOpacity style={styles.searchButton} onPress={handleSearchMatch}>
+                        <LinearGradient
+                            colors={['#FFD700', '#F59E0B']}
+                            style={styles.searchButtonGradient}
+                        >
+                            <Text style={styles.searchButtonText}>🔍 Buscar nueva partida</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
                     <TouchableOpacity style={styles.homeButton} onPress={handleGoHome}>
                         <Text style={styles.homeButtonText}>Volver al inicio</Text>
                     </TouchableOpacity>
@@ -188,7 +228,9 @@ export default function GameScreen() {
             {phase === 'playing' && (
                 <View style={[styles.phaseBar, isMyTurn ? styles.myTurnBar : styles.oppTurnBar]}>
                     <Text style={styles.phaseText}>
-                        {isMyTurn ? '🎯 ¡Tu turno!' : '⏳ Turno del oponente'}
+                        {isLastChance && isMyTurn
+                            ? '⚠️ ¡Último intento! Tu oponente adivinó tu número'
+                            : isMyTurn ? '🎯 ¡Tu turno!' : '⏳ Turno del oponente'}
                     </Text>
                 </View>
             )}
@@ -473,9 +515,21 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.md,
         paddingHorizontal: Spacing.xxxl,
         paddingVertical: Spacing.lg,
-        marginTop: Spacing.xxl,
+        marginTop: Spacing.md,
         borderWidth: 1,
         borderColor: Colors.primary,
     },
     homeButtonText: { color: Colors.primary, fontWeight: '700', fontSize: FontSize.md },
+    searchButton: {
+        borderRadius: BorderRadius.md,
+        overflow: 'hidden',
+        marginTop: Spacing.xxl,
+        width: '100%',
+    },
+    searchButtonGradient: {
+        paddingVertical: Spacing.lg,
+        alignItems: 'center',
+        borderRadius: BorderRadius.md,
+    },
+    searchButtonText: { fontSize: FontSize.md, fontWeight: '900', color: '#000', letterSpacing: 1 },
 });

@@ -37,7 +37,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Turn timers: matchId -> timeout (auto-timeout when current player's clock expires)
     private turnTimers = new Map<string, NodeJS.Timeout>();
 
-    private readonly SECRET_TIMEOUT_MS = 30_000;   // 30s to set secret
+    private readonly SECRET_TIMEOUT_MS = 60_000;   // 60s to set secret
     private readonly RECONNECT_GRACE_MS = 30_000;   // 30s to reconnect
 
     constructor(
@@ -480,6 +480,26 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 if (socketB) this.server.to(socketB).emit(GameEvent.GAME_OVER, result);
                 // Notify spectators
                 this.server.to(`spectate:${data.matchId}`).emit(GameEvent.SPECTATE_GAME_OVER, result);
+            } else if (result.type === 'last_chance') {
+                // The guesser sees a normal turn result
+                if (socketA) this.server.to(socketA).emit(GameEvent.TURN_RESULT, result);
+                if (socketB) this.server.to(socketB).emit(GameEvent.TURN_RESULT, result);
+
+                // Notify the opponent that this is their LAST CHANCE
+                const opponentRole = (result as any).guessedByPlayer === 'A' ? 'B' : 'A';
+                const opponentUid = this.gameService.getFirebaseUid(data.matchId, opponentRole);
+                if (opponentUid) {
+                    const opponentSocket = this.userSockets.get(opponentUid);
+                    if (opponentSocket) {
+                        this.server.to(opponentSocket).emit(GameEvent.LAST_CHANCE, {
+                            matchId: data.matchId,
+                            message: '¡Tu oponente adivinó tu número! Este es tu último intento.',
+                        });
+                    }
+                }
+
+                // Start turn timer for the opponent's last chance
+                this.startTurnTimer(data.matchId);
             } else {
                 if (socketA) this.server.to(socketA).emit(GameEvent.TURN_RESULT, result);
                 if (socketB) this.server.to(socketB).emit(GameEvent.TURN_RESULT, result);
@@ -746,6 +766,34 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                     you: 'B',
                 });
             }
+
+            // Start secret timer — both players must set secret within time limit
+            const secretTimeoutS = this.SECRET_TIMEOUT_MS / 1000;
+            if (requesterSocketId) {
+                this.server.to(requesterSocketId).emit(GameEvent.SECRET_TIMER, { matchId: match.id, seconds: secretTimeoutS });
+            }
+            if (accepterSocketId) {
+                this.server.to(accepterSocketId).emit(GameEvent.SECRET_TIMER, { matchId: match.id, seconds: secretTimeoutS });
+            }
+
+            const secretTimer = setTimeout(async () => {
+                this.secretTimers.delete(match.id);
+                if (!this.gameService.areBothSecretsSet(match.id)) {
+                    this.logger.warn(`Secret timer expired for rematch ${match.id} — auto-forfeiting`);
+                    try {
+                        const result = await this.gameService.handleSecretTimeout(match.id);
+                        if (result) {
+                            const uA = this.gameService.getFirebaseUid(match.id, 'A');
+                            const uB = this.gameService.getFirebaseUid(match.id, 'B');
+                            if (uA) { const s = this.userSockets.get(uA); if (s) this.server.to(s).emit(GameEvent.GAME_OVER, result); }
+                            if (uB) { const s = this.userSockets.get(uB); if (s) this.server.to(s).emit(GameEvent.GAME_OVER, result); }
+                        }
+                    } catch (e) {
+                        this.logger.error(`Secret timeout handling error (rematch): ${e}`);
+                    }
+                }
+            }, this.SECRET_TIMEOUT_MS);
+            this.secretTimers.set(match.id, secretTimer);
         } catch (err) {
             this.logger.error('Rematch failed:', err);
             // Notify both of error
