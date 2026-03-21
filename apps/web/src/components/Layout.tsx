@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useUserStore } from '../stores/userStore';
 import { isMuted, toggleMute } from '../services/sounds';
 import { api } from '../services/api';
+import { SocialFab } from './SocialFab';
 
 const NAV_ITEMS = [
     { to: '/', icon: '🏠', label: 'Inicio', end: true },
@@ -10,11 +11,10 @@ const NAV_ITEMS = [
     { to: '/spectate', icon: '👁️', label: 'Espectador' },
     { to: '/ranking', icon: '🏆', label: 'Ranking' },
     { to: '/history', icon: '📋', label: 'Historial' },
-    { to: '/friends', icon: '👥', label: 'Amigos' },
 ];
 
-// Bottom nav: max 5 items for mobile
-const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter(i => i.to !== '/spectate');
+// Bottom nav: max 5 items for mobile (drop Historial to keep it compact)
+const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter(i => i.to !== '/history');
 
 // Profile dropdown shortcuts
 const PROFILE_LINKS = [
@@ -324,6 +324,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         Powered by <strong>Pixel Perfect</strong>
                     </a>
                 </footer>
+                <SocialFab />
             </div>
 
             {/* Bottom navigation — visible only on mobile */}

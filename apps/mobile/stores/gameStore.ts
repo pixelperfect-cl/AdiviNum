@@ -38,6 +38,14 @@ interface GameState {
     winnerFirebaseUid: string | null;
     winnerPrize: number;
     isLastChance: boolean;
+    secretTimerSeconds: number | null;
+    opponentDisconnected: boolean;
+    reconnectCountdown: number | null;
+    // Rounds
+    totalRounds: number;
+    currentRound: number;
+    myWins: number;
+    opponentWins: number;
 
     // Actions
     setPhase: (phase: GamePhase) => void;
@@ -56,6 +64,10 @@ interface GameState {
     setLastChance: (isLastChance: boolean) => void;
     setLevel: (level: number) => void;
     setCurrencyType: (type: CurrencyType) => void;
+    setSecretTimerSeconds: (s: number | null) => void;
+    setOpponentDisconnected: (d: boolean) => void;
+    setReconnectCountdown: (s: number | null) => void;
+    setRoundOver: (data: { currentRound: number; myWins: number; opponentWins: number; totalRounds: number }) => void;
     resetGame: () => void;
 }
 
@@ -81,6 +93,13 @@ const initialState = {
     winnerFirebaseUid: null,
     winnerPrize: 0,
     isLastChance: false,
+    secretTimerSeconds: null as number | null,
+    opponentDisconnected: false,
+    reconnectCountdown: null as number | null,
+    totalRounds: 1,
+    currentRound: 1,
+    myWins: 0,
+    opponentWins: 0,
 };
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -120,5 +139,24 @@ export const useGameStore = create<GameState>((set, get) => ({
     setLastChance: (isLastChance) => set({ isLastChance }),
     setLevel: (level) => set({ level }),
     setCurrencyType: (currencyType) => set({ currencyType }),
+    setSecretTimerSeconds: (secretTimerSeconds) => set({ secretTimerSeconds }),
+    setOpponentDisconnected: (opponentDisconnected) => set({ opponentDisconnected }),
+    setReconnectCountdown: (reconnectCountdown) => set({ reconnectCountdown }),
+    setRoundOver: ({ currentRound, myWins, opponentWins, totalRounds }) => set({
+        currentRound,
+        myWins,
+        opponentWins,
+        totalRounds,
+        // Reset per-round state for next round
+        phase: 'set_secret' as GamePhase,
+        mySecret: '',
+        currentTurn: null,
+        isMyTurn: false,
+        myAttempts: [],
+        opponentAttempts: [],
+        result: null,
+        isLastChance: false,
+        secretTimerSeconds: null,
+    }),
     resetGame: () => set(initialState),
 }));

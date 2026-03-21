@@ -17,6 +17,7 @@ export function PlayPage() {
     const levelConfig = LEVELS[selectedLevel - 1];
     const [selectedBet, setSelectedBet] = useState(levelConfig?.betAmountCLP ?? 1000);
     const [selectedTime, setSelectedTime] = useState(300); // 5 min default
+    const [selectedRounds, setSelectedRounds] = useState(1); // 1 round default
 
     const [activeTab, setActiveTab] = useState<'matchmaking' | 'tournaments' | 'practice'>('matchmaking');
     const [tournaments, setTournaments] = useState<any[]>([]);
@@ -77,7 +78,7 @@ export function PlayPage() {
     };
 
     const handleSearchMatch = () => {
-        joinQueue(selectedLevel, selectedBet, 'VIRTUAL', selectedTime);
+        joinQueue(selectedLevel, selectedBet, 'VIRTUAL', selectedTime, selectedRounds);
 
         // Listen for phase change to navigate once match is found
         unsubRef.current = useGameStore.subscribe((state) => {
@@ -221,6 +222,22 @@ export function PlayPage() {
                                     onClick={() => setSelectedTime(t.value)}
                                 >
                                     {t.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Rounds Selector */}
+                    <div className="bet-selector">
+                        <p className="bet-selector__label">🔄 Número de rondas</p>
+                        <div className="bet-selector__options">
+                            {[{ value: 1, label: '1 Ronda' }, { value: 3, label: '3 Rondas' }, { value: 5, label: '5 Rondas' }].map((r) => (
+                                <button
+                                    key={r.value}
+                                    className={`bet-chip ${selectedRounds === r.value ? 'active' : ''}`}
+                                    onClick={() => setSelectedRounds(r.value)}
+                                >
+                                    {r.label}
                                 </button>
                             ))}
                         </div>

@@ -90,10 +90,10 @@ export function disconnectSocket() {
 /**
  * Join the matchmaking queue.
  */
-export function joinQueue(level: number, betAmount: number, currencyType: string = 'VIRTUAL', timeSeconds: number = 300) {
+export function joinQueue(level: number, betAmount: number, currencyType: string = 'VIRTUAL', timeSeconds: number = 300, totalRounds: number = 1) {
     const s = getSocket();
-    console.log('[WS] Emitting join_queue:', { level, betAmount, currencyType, timeSeconds });
-    s.emit(GameEvent.JOIN_QUEUE, { level, betAmount, currencyType, timeSeconds });
+    console.log('[WS] Emitting join_queue:', { level, betAmount, currencyType, timeSeconds, totalRounds });
+    s.emit(GameEvent.JOIN_QUEUE, { level, betAmount, currencyType, timeSeconds, totalRounds });
     useGameStore.getState().setPhase('queue');
 }
 
@@ -227,6 +227,7 @@ function setupListeners(s: Socket) {
         betAmount: number;
         firstTurn: 'A' | 'B';
         you: 'A' | 'B';
+        totalRounds?: number;
     }) => {
         console.log('[WS] Match found!', data);
         const gameStore = useGameStore.getState();
@@ -241,6 +242,7 @@ function setupListeners(s: Socket) {
             opponentAvatarUrl: opponentAvatarUrl || null,
             level: data.level,
             betAmount: data.betAmount,
+            totalRounds: data.totalRounds ?? 1,
         });
         // Move to set_secret phase
         gameStore.setPhase('set_secret');
@@ -337,6 +339,35 @@ function setupListeners(s: Socket) {
         console.log('[WS] Draw declined', data);
         const gameStore = useGameStore.getState();
         gameStore.setDrawPending(false);
+    });
+
+    // Last chance / Match point notification
+    s.on(GameEvent.LAST_CHANCE, (data: { matchId: string; message: string; role: 'attacker' | 'defender' }) => {
+        console.log('[WS] Last chance!', data);
+        const gameStore = useGameStore.getState();
+        gameStore.setLastChance(true, data.role);
+    });
+
+    // Round over (multi-round series — round finished but series continues)
+    s.on(GameEvent.ROUND_OVER, (data: {
+        matchId: string;
+        roundNumber: number;
+        roundResult: string;
+        roundWinner: 'A' | 'B' | null;
+        winsA: number;
+        winsB: number;
+        totalRounds: number;
+    }) => {
+        console.log('[WS] Round over!', data);
+        const gameStore = useGameStore.getState();
+        const myRole = gameStore.myRole;
+        const myWins = myRole === 'A' ? data.winsA : data.winsB;
+        const opponentWins = myRole === 'A' ? data.winsB : data.winsA;
+        gameStore.setRoundOver({
+            currentRound: data.roundNumber + 1,
+            myWins,
+            opponentWins,
+        });
     });
 
     // Chat message from opponent

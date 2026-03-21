@@ -164,5 +164,6 @@ export enum GameEvent {
   CHALLENGE_DECLINED = 'challenge_declined',
   LAST_CHANCE = 'last_chance',
   SECRET_TIMEOUT = 'secret_timeout',
+  ROUND_OVER = 'round_over',
   ERROR = 'game_error',
 }

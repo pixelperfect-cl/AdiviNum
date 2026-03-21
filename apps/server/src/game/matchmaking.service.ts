@@ -9,6 +9,7 @@ interface QueueEntry {
     betAmount: number;
     currencyType: CurrencyType;
     timeSeconds: number;
+    totalRounds: number;
     joinedAt: number;
 }
 
@@ -39,31 +40,31 @@ export class MatchmakingService {
         }
     }
 
-    private getQueueKey(level: number, betAmount: number, currencyType: CurrencyType, timeSeconds: number): string {
-        return `queue:${level}:${betAmount}:${currencyType}:${timeSeconds}`;
+    private getQueueKey(level: number, betAmount: number, currencyType: CurrencyType, timeSeconds: number, totalRounds: number): string {
+        return `queue:${level}:${betAmount}:${currencyType}:${timeSeconds}:${totalRounds}`;
     }
 
     /**
      * Add a player to the matchmaking queue.
      * Returns matched opponent if found, null if queued.
      */
-    async joinQueue(userId: string, level: number, betAmount: number, currencyType: CurrencyType, timeSeconds: number): Promise<QueueEntry | null> {
-        const key = this.getQueueKey(level, betAmount, currencyType, timeSeconds);
+    async joinQueue(userId: string, level: number, betAmount: number, currencyType: CurrencyType, timeSeconds: number, totalRounds: number = 1): Promise<QueueEntry | null> {
+        const key = this.getQueueKey(level, betAmount, currencyType, timeSeconds, totalRounds);
 
         if (this.useMemory) {
-            return this.joinQueueMemory(userId, key, level, betAmount, currencyType, timeSeconds);
+            return this.joinQueueMemory(userId, key, level, betAmount, currencyType, timeSeconds, totalRounds);
         }
 
         try {
-            return await this.joinQueueRedis(userId, key, level, betAmount, currencyType, timeSeconds);
+            return await this.joinQueueRedis(userId, key, level, betAmount, currencyType, timeSeconds, totalRounds);
         } catch {
             this.useMemory = true;
             this.logger.warn('Redis failed, switching to in-memory matchmaking');
-            return this.joinQueueMemory(userId, key, level, betAmount, currencyType, timeSeconds);
+            return this.joinQueueMemory(userId, key, level, betAmount, currencyType, timeSeconds, totalRounds);
         }
     }
 
-    private joinQueueMemory(userId: string, key: string, level: number, betAmount: number, currencyType: CurrencyType, timeSeconds: number): QueueEntry | null {
+    private joinQueueMemory(userId: string, key: string, level: number, betAmount: number, currencyType: CurrencyType, timeSeconds: number, totalRounds: number): QueueEntry | null {
         const queue = this.memoryQueues.get(key) || [];
 
         // Try to find an opponent
@@ -81,13 +82,13 @@ export class MatchmakingService {
         }
 
         // Add to queue
-        queue.push({ userId, level, betAmount, currencyType, timeSeconds, joinedAt: Date.now() });
+        queue.push({ userId, level, betAmount, currencyType, timeSeconds, totalRounds, joinedAt: Date.now() });
         this.memoryQueues.set(key, queue);
         this.logger.log(`Player ${userId} joined queue ${key} (memory, waiting)`);
         return null;
     }
 
-    private async joinQueueRedis(userId: string, key: string, level: number, betAmount: number, currencyType: CurrencyType, timeSeconds: number): Promise<QueueEntry | null> {
+    private async joinQueueRedis(userId: string, key: string, level: number, betAmount: number, currencyType: CurrencyType, timeSeconds: number, totalRounds: number): Promise<QueueEntry | null> {
         const existing = await this.redis.popFromQueue(key);
 
         if (existing) {
@@ -101,7 +102,7 @@ export class MatchmakingService {
             return opponent;
         }
 
-        const entry: QueueEntry = { userId, level, betAmount, currencyType, timeSeconds, joinedAt: Date.now() };
+        const entry: QueueEntry = { userId, level, betAmount, currencyType, timeSeconds, totalRounds, joinedAt: Date.now() };
         await this.redis.pushToQueue(key, JSON.stringify(entry));
         this.logger.log(`Player ${userId} joined queue ${key} (waiting)`);
         return null;
@@ -125,23 +126,26 @@ export class MatchmakingService {
         try {
             const currencies: CurrencyType[] = ['FIAT', 'VIRTUAL'];
             const timeOptions = [180, 300, 600];
+            const roundOptions = [1, 3, 5];
             for (let level = 1; level <= 10; level++) {
                 const config = LEVELS.find(l => l.level === level);
                 if (!config) continue;
                 for (const currency of currencies) {
                     for (const betAmount of config.betOptions) {
                         for (const timeSeconds of timeOptions) {
-                            const key = this.getQueueKey(level, betAmount, currency, timeSeconds);
-                            const client = this.redis.getClient();
-                            const entries = await client.lrange(key, 0, -1);
-                            for (const entry of entries) {
-                                try {
-                                    const parsed: QueueEntry = JSON.parse(entry);
-                                    if (parsed.userId === userId) {
-                                        await this.redis.removeFromQueue(key, entry);
-                                        this.logger.log(`Player ${userId} removed from queue ${key}`);
-                                    }
-                                } catch { }
+                            for (const rounds of roundOptions) {
+                                const key = this.getQueueKey(level, betAmount, currency, timeSeconds, rounds);
+                                const client = this.redis.getClient();
+                                const entries = await client.lrange(key, 0, -1);
+                                for (const entry of entries) {
+                                    try {
+                                        const parsed: QueueEntry = JSON.parse(entry);
+                                        if (parsed.userId === userId) {
+                                            await this.redis.removeFromQueue(key, entry);
+                                            this.logger.log(`Player ${userId} removed from queue ${key}`);
+                                        }
+                                    } catch { }
+                                }
                             }
                         }
                     }
@@ -153,8 +157,8 @@ export class MatchmakingService {
         }
     }
 
-    async getQueueLength(level: number, betAmount: number, currencyType: CurrencyType, timeSeconds: number): Promise<number> {
-        const key = this.getQueueKey(level, betAmount, currencyType, timeSeconds);
+    async getQueueLength(level: number, betAmount: number, currencyType: CurrencyType, timeSeconds: number, totalRounds: number = 1): Promise<number> {
+        const key = this.getQueueKey(level, betAmount, currencyType, timeSeconds, totalRounds);
         if (this.useMemory) {
             return (this.memoryQueues.get(key) || []).length;
         }
@@ -165,13 +169,16 @@ export class MatchmakingService {
         let total = 0;
         const currencies: CurrencyType[] = ['FIAT', 'VIRTUAL'];
         const timeOptions = [180, 300, 600];
+        const roundOptions = [1, 3, 5];
         for (let level = 1; level <= 10; level++) {
              const config = LEVELS.find(l => l.level === level);
              if (!config) continue;
             for (const currency of currencies) {
                 for (const betAmount of config.betOptions) {
                     for (const timeSeconds of timeOptions) {
-                        total += await this.getQueueLength(level, betAmount, currency, timeSeconds);
+                        for (const rounds of roundOptions) {
+                            total += await this.getQueueLength(level, betAmount, currency, timeSeconds, rounds);
+                        }
                     }
                 }
             }

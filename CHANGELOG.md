@@ -2,6 +2,65 @@
 
 > 📊 **~18,500 líneas de código** · ⏱️ **~480h desarrollo estimado**
 
+## [1.0.5-BETA] — 2026-03-21
+
+### 🎮 Sistema de Rondas
+
+- **Rondas por partida** — Los jugadores eligen entre 1, 3 o 5 rondas al buscar match
+- Solo emparejas con jugadores que eligieron la misma cantidad de rondas
+- **Progresión de rondas** — Indicador visual de ronda actual y marcador de serie
+- **Ganador por serie** — El primero en ganar la mayoría de rondas gana la partida
+- Apuesta configurada una vez para toda la serie
+- Nuevo evento `ROUND_OVER` en el protocolo WebSocket
+
+### 💬 Social FAB
+
+- **Botón flotante social** — Reemplaza el ítem "Amigos" del menú por un FAB accesible desde cualquier página
+- Hub centralizado para amigos, chats y salas públicas
+- Animación de apertura/cierre con overlay
+
+### 📱 Mobile
+
+- **Tab Espectador** — Pestaña añadida a la navegación inferior de la app móvil
+- Soporte de rondas en la pantalla de juego móvil
+- Listeners de socket actualizados para eventos de ronda
+
+### 🎨 UI / Perfil
+
+- **Empates en historial** — Caja "Empates" añadida al perfil para mejorar alineación y estadísticas
+- Mejoras de layout en la página de perfil
+
+### ⏱️ Timer & Fairness
+
+- **Fix de timers** — Corrección de bugs en duración de timers y declaración de victoria/derrota
+- **Feedback de timeout** — Mensajes claros cuando un jugador agota su tiempo
+- **Mecánica "última oportunidad"** — El jugador que se queda sin tiempo tiene una última chance
+- Corrección en flujo de revancha y retos directos
+
+---
+
+## [1.0.4-BETA] — 2026-03-19
+
+### ⭐ Sistema XP & Niveles
+
+- **Sistema de XP** — Experiencia por partidas jugadas con leveling progresivo
+- **Recompensas por logros** — Medallas otorgan bonos de monedas y XP
+- **Rediseño de navegación** — Sidebar y layout mejorados
+
+### 🔐 Seguridad & Estabilidad
+
+- **Null safety completo** — Protección contra crashes en `userStore` y todas las páginas
+- **Estados de error** — Manejo graceful de errores en todos los componentes
+- **Fix JSON parse** — Corrección de errores de parsing en respuestas del servidor
+- Restauración del enlace de perfil y del Historial en sidebar
+
+### 🚀 Deploy
+
+- **Fix deploy.sh** — Ruta correcta de Prisma schema, servidor inicia desde `apps/server`
+- Badge de versión actualizado a v1.0.4
+
+---
+
 ## [1.0.3-BETA] — 2026-03-19
 
 ### 🚀 Deploy Automatizado

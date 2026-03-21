@@ -113,7 +113,7 @@ function RadarChart({ winRate, streak, wins, games, elo }: {
         </div>
     );
 }
-type Tab = 'personal' | 'stats' | 'history' | 'wallet' | 'achievements';
+type Tab = 'personal' | 'stats' | 'history' | 'achievements';
 
 interface MatchRecord {
     id: string;
@@ -217,7 +217,7 @@ export function ProfilePage() {
     // Update active tab when URL changes
     useEffect(() => {
         const tab = searchParams.get('tab') as Tab;
-        if (tab && ['personal', 'stats', 'history', 'wallet', 'achievements'].includes(tab)) {
+        if (tab && ['personal', 'stats', 'history', 'achievements'].includes(tab)) {
             setActiveTab(tab);
         }
     }, [searchParams]);
@@ -265,7 +265,6 @@ export function ProfilePage() {
         { key: 'personal', label: 'Perfil', icon: '👤' },
         { key: 'stats', label: 'Estadísticas', icon: '📊' },
         { key: 'history', label: 'Historial', icon: '📋' },
-        { key: 'wallet', label: 'Billetera', icon: '💰' },
         { key: 'achievements', label: 'Logros', icon: '🏅' },
     ];
 
@@ -302,6 +301,25 @@ export function ProfilePage() {
                 </div>
             </div>
 
+            {/* Wallet card — always visible */}
+            <div className="card card--gold" style={{ marginBottom: '16px', padding: '14px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: '1.3rem' }}>💰</span>
+                        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Monedas</div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>🪙 {(wallet?.balanceVirtual ?? 0).toLocaleString()}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Saldo Real</div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>${((wallet?.balanceFiat ?? 0) / 100).toLocaleString()} CLP</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Tab bar */}
             <div style={{
                 display: 'flex',
@@ -317,19 +335,23 @@ export function ProfilePage() {
                         onClick={() => setActiveTab(tab.key)}
                         style={{
                             flex: 1,
-                            padding: '10px 8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '2px',
+                            padding: '10px 6px',
                             borderRadius: '10px',
                             border: 'none',
                             background: activeTab === tab.key ? 'var(--gold)' : 'transparent',
                             color: activeTab === tab.key ? '#000' : 'var(--text-muted)',
                             fontWeight: activeTab === tab.key ? 700 : 400,
-                            fontSize: '0.85rem',
+                            fontSize: '0.75rem',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease',
                         }}
                     >
-                        <span style={{ marginRight: '4px' }}>{tab.icon}</span>
-                        {tab.label}
+                        <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>{tab.icon}</span>
+                        <span>{tab.label}</span>
                     </button>
                 ))}
             </div>
@@ -549,6 +571,10 @@ export function ProfilePage() {
                                     <div className="quick-stat__label">Victorias</div>
                                 </div>
                                 <div className="card quick-stat">
+                                    <div className="quick-stat__value" style={{ color: 'var(--text-secondary)' }}>{matchHistory.filter(m => m.result === 'DRAW').length}</div>
+                                    <div className="quick-stat__label">Empates</div>
+                                </div>
+                                <div className="card quick-stat">
                                     <div className="quick-stat__value" style={{ color: 'var(--error)' }}>{matchHistory.filter(m => m.result === 'LOSS').length}</div>
                                     <div className="quick-stat__label">Derrotas</div>
                                 </div>
@@ -590,29 +616,7 @@ export function ProfilePage() {
                 </div>
             )}
 
-            {activeTab === 'wallet' && (
-                <div className="card card--gold">
-                    <p className="section-subtitle">Billetera</p>
-                    <div className="stat-row">
-                        <span className="stat-label">🪙 Monedas virtuales</span>
-                        <span className="stat-value" style={{ color: 'var(--gold)' }}>
-                            {(wallet?.balanceVirtual ?? 0).toLocaleString()}
-                        </span>
-                    </div>
-                    <div className="stat-row">
-                        <span className="stat-label">💰 Saldo real</span>
-                        <span className="stat-value">
-                            ${((wallet?.balanceFiat ?? 0) / 100).toLocaleString()} CLP
-                        </span>
-                    </div>
-                    <div className="stat-row">
-                        <span className="stat-label">🏦 Ahorro</span>
-                        <span className="stat-value">
-                            ${((wallet?.balanceSavings ?? 0) / 100).toLocaleString()} CLP
-                        </span>
-                    </div>
-                </div>
-            )}
+
 
             {activeTab === 'achievements' && achievements.length > 0 && (
                 <div className="card">

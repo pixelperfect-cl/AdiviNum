@@ -26,6 +26,7 @@ export default function PlayScreen() {
     const setCurrencyType = useGameStore((s) => s.setCurrencyType);
     const matchId = useGameStore((s) => s.matchId);
     const wallet = useUserStore((s) => s.wallet);
+    const [selectedRounds, setSelectedRounds] = useState(1);
 
     // Auto-navigate to game when match is found
     React.useEffect(() => {
@@ -37,7 +38,7 @@ export default function PlayScreen() {
     const handleJoinQueue = () => {
         const currency = currencyTab === 'fiat' ? 'FIAT' : 'VIRTUAL';
         setCurrencyType(currencyTab);
-        joinQueue(selectedLevel, currency);
+        joinQueue(selectedLevel, currency, selectedRounds);
     };
 
     const handleLeaveQueue = () => {
@@ -104,6 +105,29 @@ export default function PlayScreen() {
                         </TouchableOpacity>
                     );
                 })}
+            </View>
+
+            {/* Rounds Selector */}
+            <Text style={styles.sectionTitle}>🔄 Número de rondas</Text>
+            <View style={styles.roundsRow}>
+                {[1, 3, 5].map((r) => (
+                    <TouchableOpacity
+                        key={r}
+                        style={[
+                            styles.roundChip,
+                            selectedRounds === r && styles.roundChipActive,
+                        ]}
+                        onPress={() => setSelectedRounds(r)}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[
+                            styles.roundChipText,
+                            selectedRounds === r && styles.roundChipTextActive,
+                        ]}>
+                            {r === 1 ? '1 Ronda' : `${r} Rondas`}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
             </View>
 
             {/* Action Button */}
@@ -277,5 +301,32 @@ const styles = StyleSheet.create({
         color: Colors.error,
         fontWeight: '700',
         fontSize: FontSize.md,
+    },
+    roundsRow: {
+        flexDirection: 'row',
+        gap: Spacing.md,
+        marginBottom: Spacing.xl,
+    },
+    roundChip: {
+        flex: 1,
+        backgroundColor: Colors.surface,
+        borderRadius: BorderRadius.md,
+        paddingVertical: Spacing.md,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: Colors.border,
+    },
+    roundChipActive: {
+        borderColor: Colors.primary,
+        backgroundColor: Colors.surfaceLight,
+    },
+    roundChipText: {
+        fontSize: FontSize.sm,
+        fontWeight: '600',
+        color: Colors.textMuted,
+    },
+    roundChipTextActive: {
+        color: Colors.primary,
+        fontWeight: '800',
     },
 });

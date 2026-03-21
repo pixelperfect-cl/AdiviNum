@@ -31,6 +31,11 @@ export default function GameScreen() {
     const winnerFirebaseUid = useGameStore((s) => s.winnerFirebaseUid);
     const winnerPrize = useGameStore((s) => s.winnerPrize);
     const isLastChance = useGameStore((s) => s.isLastChance);
+    const secretTimerSeconds = useGameStore((s) => s.secretTimerSeconds);
+    const totalRounds = useGameStore((s) => s.totalRounds);
+    const currentRound = useGameStore((s) => s.currentRound);
+    const myWins = useGameStore((s) => s.myWins);
+    const opponentWins = useGameStore((s) => s.opponentWins);
     const resetGame = useGameStore((s) => s.resetGame);
     const myUserId = useUserStore((s) => s.user?.id);
 
@@ -38,8 +43,36 @@ export default function GameScreen() {
     const [secretSet, setSecretSet] = useState(false);
     const [myTimer, setMyTimer] = useState(myTimeRemaining);
     const [oppTimer, setOppTimer] = useState(opponentTimeRemaining);
+    const [localSecretTimer, setLocalSecretTimer] = useState<number | null>(null);
 
     const config = getLevelConfig(level);
+
+    // Reset secretSet when a new round begins
+    useEffect(() => {
+        if (currentRound > 1) {
+            setSecretSet(false);
+            setInputDigits(['', '', '', '']);
+        }
+    }, [currentRound]);
+
+    // Secret timer countdown
+    useEffect(() => {
+        if (secretTimerSeconds !== null) {
+            setLocalSecretTimer(secretTimerSeconds);
+        }
+    }, [secretTimerSeconds]);
+
+    useEffect(() => {
+        if (localSecretTimer === null || localSecretTimer <= 0 || secretSet && phase === 'set_secret') return;
+        if (phase === 'playing' || phase === 'game_over') {
+            setLocalSecretTimer(null);
+            return;
+        }
+        const interval = setInterval(() => {
+            setLocalSecretTimer((t) => (t !== null ? Math.max(0, t - 1) : null));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [localSecretTimer, phase, secretSet]);
 
     // Timer countdown
     useEffect(() => {
@@ -214,22 +247,40 @@ export default function GameScreen() {
                 </View>
             </View>
 
+            {/* Round indicator for multi-round matches */}
+            {totalRounds > 1 && (
+                <View style={styles.roundBar}>
+                    <Text style={{ color: '#94A3B8', fontSize: FontSize.xs }}>
+                        🔄 Ronda {currentRound}/{totalRounds}
+                    </Text>
+                    <Text style={{ color: Colors.primary, fontSize: FontSize.sm, fontWeight: '700' }}>
+                        {myWins} - {opponentWins}
+                    </Text>
+                </View>
+            )}
+
             {/* Phase indicator */}
             {!secretSet && phase !== 'playing' && (
                 <View style={styles.phaseBar}>
-                    <Text style={styles.phaseText}>🔐 Elige tu número secreto</Text>
+                    <Text style={styles.phaseText}>
+                        🔐 Elige tu número secreto {localSecretTimer !== null && localSecretTimer > 0 ? `(${localSecretTimer}s)` : ''}
+                    </Text>
                 </View>
             )}
             {secretSet && phase === 'set_secret' && (
                 <View style={styles.phaseBar}>
-                    <Text style={styles.phaseText}>⏳ Esperando al oponente...</Text>
+                    <Text style={styles.phaseText}>
+                        ⏳ Esperando al oponente... {localSecretTimer !== null && localSecretTimer > 0 ? `(${localSecretTimer}s)` : ''}
+                    </Text>
                 </View>
             )}
             {phase === 'playing' && (
                 <View style={[styles.phaseBar, isMyTurn ? styles.myTurnBar : styles.oppTurnBar]}>
                     <Text style={styles.phaseText}>
                         {isLastChance && isMyTurn
-                            ? '⚠️ ¡Último intento! Tu oponente adivinó tu número'
+                            ? '⚡ ¡MATCH POINT! Tu oponente adivinó. ¡Último intento!'
+                            : isLastChance && !isMyTurn
+                            ? '⚡ ¡MATCH POINT! Esperando último intento del oponente...'
                             : isMyTurn ? '🎯 ¡Tu turno!' : '⏳ Turno del oponente'}
                     </Text>
                 </View>
@@ -532,4 +583,14 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.md,
     },
     searchButtonText: { fontSize: FontSize.md, fontWeight: '900', color: '#000', letterSpacing: 1 },
+    roundBar: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: Spacing.md,
+        paddingVertical: Spacing.sm,
+        backgroundColor: Colors.primary + '08',
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.primary + '20',
+    },
 });

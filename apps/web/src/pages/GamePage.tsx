@@ -301,6 +301,29 @@ function PlayingPhase() {
                 />
             </div>
 
+            {/* Round indicator for multi-round matches */}
+            {game.totalRounds > 1 && (
+                <div className="round-indicator" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    padding: '6px 16px',
+                    background: 'rgba(255, 215, 0, 0.06)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 215, 0, 0.12)',
+                    margin: '4px 0',
+                    fontSize: '0.85rem',
+                }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                        🔄 Ronda {game.currentRound}/{game.totalRounds}
+                    </span>
+                    <span style={{ fontWeight: 700, color: 'var(--gold)' }}>
+                        {game.myWins} - {game.opponentWins}
+                    </span>
+                </div>
+            )}
+
             {/* My secret number reference */}
             {game.mySecret && (
                 <div style={{

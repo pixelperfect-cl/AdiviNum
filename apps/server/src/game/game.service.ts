@@ -32,6 +32,12 @@ interface ActiveMatch {
     lastTurnStartedAt: number; // timestamp
     playerAGuessed: boolean;  // A already guessed the secret
     playerBGuessed: boolean;  // B already guessed the secret
+    // Rounds
+    totalRounds: number;      // 1, 3, or 5
+    currentRound: number;     // current round (1-indexed)
+    winsA: number;            // rounds won by A
+    winsB: number;            // rounds won by B
+    initialTimeMs: number;    // original time per round
 }
 
 @Injectable()
@@ -69,6 +75,7 @@ export class GameService {
         betAmount: number,
         currencyType: CurrencyType,
         timeSeconds?: number,
+        totalRounds: number = 1,
     ) {
         // Resolve firebaseUid → Prisma User record
         const [userA, userB] = await Promise.all([
@@ -127,6 +134,11 @@ export class GameService {
             lastTurnStartedAt: 0, // Set when both secrets are set
             playerAGuessed: false,
             playerBGuessed: false,
+            totalRounds: totalRounds,
+            currentRound: 1,
+            winsA: 0,
+            winsB: 0,
+            initialTimeMs: timeMs,
         });
 
         return {
@@ -354,6 +366,14 @@ export class GameService {
             return this.endMatch(matchId, player === 'A' ? MatchResult.PLAYER_A_WINS : MatchResult.PLAYER_B_WINS);
         }
 
+        // Last chance failed — the player who guessed first wins
+        if (player === 'A' && active.playerBGuessed) {
+            return this.endMatch(matchId, MatchResult.PLAYER_B_WINS);
+        }
+        if (player === 'B' && active.playerAGuessed) {
+            return this.endMatch(matchId, MatchResult.PLAYER_A_WINS);
+        }
+
         // Check if both players exhausted attempts
         if (active.attemptsA >= MAX_ATTEMPTS && active.attemptsB >= MAX_ATTEMPTS) {
             return this.endMatch(matchId, MatchResult.DRAW);
@@ -376,12 +396,82 @@ export class GameService {
     }
 
     /**
+     * Reset round-level state for next round in a multi-round series.
+     */
+    private resetRound(active: ActiveMatch) {
+        active.currentRound++;
+        active.secretA = '';
+        active.secretB = '';
+        active.attemptsA = 0;
+        active.attemptsB = 0;
+        active.historyA = [];
+        active.historyB = [];
+        active.playerAGuessed = false;
+        active.playerBGuessed = false;
+        active.timeRemainingA = active.initialTimeMs;
+        active.timeRemainingB = active.initialTimeMs;
+        active.lastTurnStartedAt = 0;
+        // Alternate who goes first
+        active.currentTurn = active.currentTurn === 'A' ? 'B' : 'A';
+    }
+
+    /**
      * End a match and settle finances.
      * All playerIds here are Prisma User.id (UUID).
+     * For multi-round series: if the series is not yet decided,
+     * returns a 'round_over' result instead of finalizing.
      */
     async endMatch(matchId: string, result: MatchResult) {
         const active = this.activeMatches.get(matchId);
         if (!active) throw new Error('Match not found');
+
+        // --- Multi-round: check if this is a round win, not series end ---
+        if (active.totalRounds > 1) {
+            let roundWinner: 'A' | 'B' | null = null;
+            if (result === MatchResult.PLAYER_A_WINS) roundWinner = 'A';
+            else if (result === MatchResult.PLAYER_B_WINS) roundWinner = 'B';
+
+            // Only do round progression for non-draw, non-timeout/abandon results
+            // Draws in a round: no one gets a point, just start next round
+            if (roundWinner || result === MatchResult.DRAW) {
+                if (roundWinner === 'A') active.winsA++;
+                if (roundWinner === 'B') active.winsB++;
+
+                const winsNeeded = Math.ceil(active.totalRounds / 2);
+                const roundsPlayed = active.currentRound;
+
+                // Series NOT yet decided
+                if (active.winsA < winsNeeded && active.winsB < winsNeeded && roundsPlayed < active.totalRounds) {
+                    const roundResult = {
+                        type: 'round_over' as const,
+                        roundNumber: active.currentRound,
+                        roundResult: result,
+                        roundWinner,
+                        winsA: active.winsA,
+                        winsB: active.winsB,
+                        totalRounds: active.totalRounds,
+                        matchId,
+                    };
+
+                    // Reset for next round
+                    this.resetRound(active);
+
+                    return roundResult;
+                }
+
+                // Series decided — determine winner for final settlement
+                if (active.winsA >= winsNeeded) {
+                    result = MatchResult.PLAYER_A_WINS;
+                } else if (active.winsB >= winsNeeded) {
+                    result = MatchResult.PLAYER_B_WINS;
+                } else {
+                    // All rounds played, check who has more wins
+                    if (active.winsA > active.winsB) result = MatchResult.PLAYER_A_WINS;
+                    else if (active.winsB > active.winsA) result = MatchResult.PLAYER_B_WINS;
+                    else result = MatchResult.DRAW; // True draw across all rounds
+                }
+            }
+        }
 
         const config = getLevelConfig(active.level);
         const totalPot = active.betAmount * 2;

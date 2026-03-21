@@ -36,6 +36,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private disconnectTimers = new Map<string, NodeJS.Timeout>();
     // Turn timers: matchId -> timeout (auto-timeout when current player's clock expires)
     private turnTimers = new Map<string, NodeJS.Timeout>();
+    // Round secret timers: matchId -> { interval, timeout } for the next-round secret countdown
+    private roundSecretTimers = new Map<string, { interval: NodeJS.Timeout; timeout: NodeJS.Timeout }>();
 
     private readonly SECRET_TIMEOUT_MS = 60_000;   // 60s to set secret
     private readonly RECONNECT_GRACE_MS = 30_000;   // 30s to reconnect
@@ -264,7 +266,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage(GameEvent.JOIN_QUEUE)
     async handleJoinQueue(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { level: number; betAmount?: number; currencyType: CurrencyType; timeSeconds?: number },
+        @MessageBody() data: { level: number; betAmount?: number; currencyType: CurrencyType; timeSeconds?: number; totalRounds?: number },
     ) {
         const conn = this.connections.get(client.id);
         if (!conn) return;
@@ -285,6 +287,10 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         this.logger.log(`Player ${conn.userId} joining queue: level=${data.level}, bet=${betAmount}, currency=${data.currencyType}, time=${timeSeconds}s`);
 
+        // Validate totalRounds (1, 3, or 5)
+        const validRounds = [1, 3, 5];
+        const totalRounds = validRounds.includes(data.totalRounds ?? 0) ? data.totalRounds! : 1;
+
         try {
             // Pre-validate balance before entering queue
             try {
@@ -300,7 +306,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 // If balance check fails (e.g. user not found), proceed anyway — holdBet will catch it
             }
 
-            const opponent = await this.matchmaking.joinQueue(conn.userId, data.level, betAmount, data.currencyType, timeSeconds);
+            const opponent = await this.matchmaking.joinQueue(conn.userId, data.level, betAmount, data.currencyType, timeSeconds, totalRounds);
 
             if (opponent) {
                 // Match found! Create the match
@@ -312,6 +318,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                     betAmount,
                     data.currencyType,
                     timeSeconds,
+                    totalRounds,
                 );
 
                 // Assign matchId to both players' connections
@@ -334,6 +341,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                     level: data.level,
                     betAmount,
                     firstTurn,
+                    totalRounds,
                 };
 
                 if (opponentSocketId) {
@@ -417,6 +425,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             // Clear secret timer
             const st = this.secretTimers.get(data.matchId);
             if (st) { clearTimeout(st); this.secretTimers.delete(data.matchId); }
+            // Clear round secret timer if multi-round
+            const rst = this.roundSecretTimers.get(data.matchId);
+            if (rst) { clearInterval(rst.interval); clearTimeout(rst.timeout); this.roundSecretTimers.delete(data.matchId); }
             const updated = this.gameService.getActiveMatch(data.matchId)!;
             const startData = {
                 matchId: data.matchId,
@@ -480,20 +491,76 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 if (socketB) this.server.to(socketB).emit(GameEvent.GAME_OVER, result);
                 // Notify spectators
                 this.server.to(`spectate:${data.matchId}`).emit(GameEvent.SPECTATE_GAME_OVER, result);
+            } else if (result.type === 'round_over') {
+                // Round ended but series continues — notify both players
+                this.clearTurnTimer(data.matchId);
+                if (socketA) this.server.to(socketA).emit(GameEvent.ROUND_OVER, result);
+                if (socketB) this.server.to(socketB).emit(GameEvent.ROUND_OVER, result);
+
+                // Start secret timer for next round
+                const secretTimeoutS = this.SECRET_TIMEOUT_MS / 1000;
+                let secondsLeft = secretTimeoutS;
+                if (socketA) this.server.to(socketA).emit(GameEvent.SECRET_TIMER, { matchId: data.matchId, seconds: secondsLeft });
+                if (socketB) this.server.to(socketB).emit(GameEvent.SECRET_TIMER, { matchId: data.matchId, seconds: secondsLeft });
+
+                const secretTimerInterval = setInterval(() => {
+                    secondsLeft--;
+                    if (secondsLeft > 0) {
+                        if (socketA) this.server.to(socketA).emit(GameEvent.SECRET_TIMER, { matchId: data.matchId, seconds: secondsLeft });
+                        if (socketB) this.server.to(socketB).emit(GameEvent.SECRET_TIMER, { matchId: data.matchId, seconds: secondsLeft });
+                    }
+                }, 1000);
+
+                this.roundSecretTimers.set(data.matchId, {
+                    interval: secretTimerInterval,
+                    timeout: setTimeout(async () => {
+                        clearInterval(secretTimerInterval);
+                        this.roundSecretTimers.delete(data.matchId);
+                        // Handle secret timeout for the new round
+                        if (!this.gameService.areBothSecretsSet(data.matchId)) {
+                            try {
+                                const timeoutResult = await this.gameService.handleSecretTimeout(data.matchId);
+                                if (timeoutResult) {
+                                    if (socketA) this.server.to(socketA).emit(GameEvent.GAME_OVER, timeoutResult);
+                                    if (socketB) this.server.to(socketB).emit(GameEvent.GAME_OVER, timeoutResult);
+                                }
+                            } catch (e) {
+                                this.logger.error(`Round secret timeout error: ${e}`);
+                            }
+                        }
+                    }, this.SECRET_TIMEOUT_MS),
+                });
             } else if (result.type === 'last_chance') {
                 // The guesser sees a normal turn result
                 if (socketA) this.server.to(socketA).emit(GameEvent.TURN_RESULT, result);
                 if (socketB) this.server.to(socketB).emit(GameEvent.TURN_RESULT, result);
 
                 // Notify the opponent that this is their LAST CHANCE
-                const opponentRole = (result as any).guessedByPlayer === 'A' ? 'B' : 'A';
+                const guessedByPlayer = (result as any).guessedByPlayer;
+                const opponentRole = guessedByPlayer === 'A' ? 'B' : 'A';
                 const opponentUid = this.gameService.getFirebaseUid(data.matchId, opponentRole);
+                const guesserUid = this.gameService.getFirebaseUid(data.matchId, guessedByPlayer);
+
+                // Notify opponent: last chance warning
                 if (opponentUid) {
                     const opponentSocket = this.userSockets.get(opponentUid);
                     if (opponentSocket) {
                         this.server.to(opponentSocket).emit(GameEvent.LAST_CHANCE, {
                             matchId: data.matchId,
                             message: '¡Tu oponente adivinó tu número! Este es tu último intento.',
+                            role: 'defender',
+                        });
+                    }
+                }
+
+                // Notify guesser: match point
+                if (guesserUid) {
+                    const guesserSocket = this.userSockets.get(guesserUid);
+                    if (guesserSocket) {
+                        this.server.to(guesserSocket).emit(GameEvent.LAST_CHANCE, {
+                            matchId: data.matchId,
+                            message: '¡Adivinaste! Esperando último intento del oponente...',
+                            role: 'attacker',
                         });
                     }
                 }
