@@ -11,16 +11,7 @@ const DEV_UID_MAP: Record<string, string> = {
 let chatSocket: Socket | null = null;
 let currentUserId: string | null = null;
 
-/* ── Listeners registered by the UI ── */
-type MessagePayload = {
-    id: string;
-    senderId: string;
-    receiverId?: string | null;
-    roomId?: string | null;
-    content: string;
-    createdAt: string;
-    sender: { id: string; username: string; avatarUrl: string | null };
-};
+
 
 type Listener = (...args: any[]) => void;
 const externalListeners = new Map<string, Set<Listener>>();
