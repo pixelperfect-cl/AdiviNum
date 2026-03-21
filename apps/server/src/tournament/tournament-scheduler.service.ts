@@ -13,9 +13,10 @@ import { CurrencyType } from '@prisma/client';
 interface TournamentTemplate {
     name: string;
     description: string;
-    schedule: 'daily' | 'weekly';
+    schedule: 'daily' | 'weekly' | 'monthly';
     hour: number;          // UTC hour to start
     dayOfWeek?: number;    // 0=Sunday, 1=Monday, etc. (for weekly)
+    dayOfMonth?: number;   // 1-28 (for monthly)
     maxPlayers: 8 | 16 | 32;
     entryFee: number;
     currencyType: CurrencyType;
@@ -62,6 +63,19 @@ const TOURNAMENT_TEMPLATES: TournamentTemplate[] = [
         prizeDistribution: [70, 30],
         registrationMinutesBefore: 30,
     },
+    {
+        name: 'Copa Mensual AdiviNum',
+        description: 'Gran torneo mensual — 32 jugadores, premios mayores',
+        schedule: 'monthly',
+        hour: 20, // 8 PM UTC
+        dayOfMonth: 15,
+        maxPlayers: 32,
+        entryFee: 2000,
+        currencyType: CurrencyType.VIRTUAL,
+        level: 5,
+        prizeDistribution: [45, 25, 15, 10, 5],
+        registrationMinutesBefore: 1440, // 24 hours before
+    },
 ];
 
 @Injectable()
@@ -98,6 +112,7 @@ export class TournamentSchedulerService implements OnModuleInit {
                         currencyType: template.currencyType,
                         level: template.level,
                         prizeDistribution: template.prizeDistribution,
+                        schedule: template.schedule,
                         startsAt,
                         registrationDeadline,
                     });
@@ -126,7 +141,13 @@ export class TournamentSchedulerService implements OnModuleInit {
         const target = new Date(now);
         target.setUTCHours(template.hour, 0, 0, 0);
 
-        if (template.schedule === 'weekly' && template.dayOfWeek !== undefined) {
+        if (template.schedule === 'monthly' && template.dayOfMonth !== undefined) {
+            target.setUTCDate(template.dayOfMonth);
+            if (target.getTime() <= now.getTime()) {
+                // Move to next month
+                target.setUTCMonth(target.getUTCMonth() + 1);
+            }
+        } else if (template.schedule === 'weekly' && template.dayOfWeek !== undefined) {
             const currentDay = target.getUTCDay();
             let daysAhead = template.dayOfWeek - currentDay;
             if (daysAhead < 0) daysAhead += 7;

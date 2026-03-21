@@ -161,18 +161,12 @@ function MatchCard({ match }: { match: MatchRecord }) {
 
     return (
         <div className={`card history-card ${config.className} ${expanded ? 'history-card--expanded' : ''}`}>
-            <div className="history-card__header" onClick={toggleExpand} style={{ cursor: 'pointer' }}>
+            <div className="history-card__header">
                 <span className="history-card__result" style={{ color: config.color }}>
                     {config.emoji} {config.label}
                 </span>
                 <span className="history-card__time">
                     {timeAgo}
-                    <span className="history-card__chevron" style={{
-                        display: 'inline-block',
-                        marginLeft: '6px',
-                        transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.2s ease',
-                    }}>▾</span>
                 </span>
             </div>
             <div className="history-card__body">
@@ -192,6 +186,12 @@ function MatchCard({ match }: { match: MatchRecord }) {
                     <span>⏱ {durationStr}</span>
                 </div>
             </div>
+
+            {/* Expand / Collapse button */}
+            <button className="history-card__toggle" onClick={toggleExpand}>
+                <span>{expanded ? 'Ocultar detalle' : 'Ver detalle'}</span>
+                <span className={`history-card__toggle-chevron ${expanded ? 'history-card__toggle-chevron--open' : ''}`}>▾</span>
+            </button>
 
             {/* Expanded detail */}
             {expanded && (

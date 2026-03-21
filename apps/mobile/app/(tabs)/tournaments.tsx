@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Alert,
+    ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, FontSize, BorderRadius } from '@/constants/theme';
@@ -29,19 +30,35 @@ interface Tournament {
     _count: { participants: number };
 }
 
+type TournamentTabKey = 'daily' | 'weekly' | 'monthly' | 'active';
+
+const TOURNAMENT_TABS: { key: TournamentTabKey; label: string; icon: string }[] = [
+    { key: 'daily', label: 'Diarios', icon: '📅' },
+    { key: 'weekly', label: 'Semanales', icon: '📆' },
+    { key: 'monthly', label: 'Mensuales', icon: '🗓️' },
+    { key: 'active', label: 'Activos', icon: '🔴' },
+];
+
 export default function TournamentsScreen() {
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [loading, setLoading] = useState(true);
     const [registering, setRegistering] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<TournamentTabKey>('daily');
     const user = useUserStore((s) => s.user);
 
     useEffect(() => {
         loadTournaments();
-    }, []);
+    }, [activeTab]);
 
     const loadTournaments = async () => {
+        setLoading(true);
         try {
-            const data = await api.listTournaments() as Tournament[];
+            let data: Tournament[];
+            if (activeTab === 'active') {
+                data = await api.listTournaments({ status: 'IN_PROGRESS' }) as Tournament[];
+            } else {
+                data = await api.listTournaments({ schedule: activeTab }) as Tournament[];
+            }
             setTournaments(data);
         } catch (err) {
             console.error('Failed to load tournaments:', err);
@@ -169,16 +186,18 @@ export default function TournamentsScreen() {
                     </LinearGradient>
                 </TouchableOpacity>
             )}
+            {item.status === 'IN_PROGRESS' && (
+                <TouchableOpacity
+                    style={[styles.registerButton, { opacity: 0.85 }]}
+                    activeOpacity={0.8}
+                >
+                    <View style={[styles.gradientBtn, { backgroundColor: Colors.surface, borderWidth: 1, borderColor: '#F59E0B40' }]}>
+                        <Text style={[styles.registerText, { color: '#F59E0B' }]}>👁️ Espectador</Text>
+                    </View>
+                </TouchableOpacity>
+            )}
         </View>
     );
-
-    if (loading) {
-        return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color={Colors.primary} />
-            </View>
-        );
-    }
 
     return (
         <View style={styles.container}>
@@ -187,11 +206,49 @@ export default function TournamentsScreen() {
                 <Text style={styles.subtitle}>Compite por premios mayores</Text>
             </View>
 
-            {tournaments.length === 0 ? (
+            {/* Sub-tabs */}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.tabBar}
+                contentContainerStyle={styles.tabBarContent}
+            >
+                {TOURNAMENT_TABS.map((tab) => (
+                    <TouchableOpacity
+                        key={tab.key}
+                        style={[
+                            styles.tabItem,
+                            activeTab === tab.key && styles.tabItemActive,
+                        ]}
+                        onPress={() => setActiveTab(tab.key)}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.tabIcon}>{tab.icon}</Text>
+                        <Text style={[
+                            styles.tabLabel,
+                            activeTab === tab.key && styles.tabLabelActive,
+                        ]}>
+                            {tab.label}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+
+            {loading ? (
                 <View style={styles.centered}>
-                    <Text style={styles.emptyIcon}>🏟️</Text>
-                    <Text style={styles.emptyText}>No hay torneos activos</Text>
-                    <Text style={styles.emptySubtext}>Vuelve pronto para nuevos torneos</Text>
+                    <ActivityIndicator size="large" color={Colors.primary} />
+                </View>
+            ) : tournaments.length === 0 ? (
+                <View style={styles.centered}>
+                    <Text style={styles.emptyIcon}>
+                        {activeTab === 'active' ? '🏟️' : '🕐'}
+                    </Text>
+                    <Text style={styles.emptyText}>
+                        {activeTab === 'active' ? 'No hay torneos en curso' : 'No hay torneos disponibles'}
+                    </Text>
+                    <Text style={styles.emptySubtext}>
+                        {activeTab === 'active' ? 'Vuelve cuando haya torneos activos' : 'Vuelve pronto para nuevos torneos'}
+                    </Text>
                 </View>
             ) : (
                 <FlatList
@@ -212,7 +269,7 @@ const styles = StyleSheet.create({
     header: {
         paddingHorizontal: Spacing.xl,
         paddingTop: 60,
-        paddingBottom: Spacing.lg,
+        paddingBottom: Spacing.sm,
     },
     title: {
         fontSize: FontSize.xxl,
@@ -225,6 +282,41 @@ const styles = StyleSheet.create({
         color: Colors.textSecondary,
         marginTop: Spacing.xs,
     },
+    // Tab bar
+    tabBar: {
+        maxHeight: 56,
+        marginBottom: Spacing.sm,
+    },
+    tabBarContent: {
+        paddingHorizontal: Spacing.lg,
+        gap: 8,
+    },
+    tabItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.lg,
+        borderRadius: BorderRadius.md,
+        backgroundColor: Colors.surface,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        gap: 6,
+    },
+    tabItemActive: {
+        backgroundColor: '#FFD70020',
+        borderColor: '#FFD700',
+    },
+    tabIcon: { fontSize: 16 },
+    tabLabel: {
+        fontSize: FontSize.sm,
+        fontWeight: '600',
+        color: Colors.textSecondary,
+    },
+    tabLabelActive: {
+        color: Colors.primary,
+        fontWeight: '800',
+    },
+    // List
     list: { paddingHorizontal: Spacing.lg, paddingBottom: 100 },
     card: {
         backgroundColor: Colors.surface,
@@ -299,3 +391,4 @@ const styles = StyleSheet.create({
         marginTop: Spacing.xs,
     },
 });
+

@@ -51,7 +51,13 @@ export const api = {
 };
 
 export const tournamentApi = {
-    getTournaments: () => api.get<any[]>('/tournament'),
+    getTournaments: (params?: { schedule?: string; status?: string }) => {
+        const query = new URLSearchParams();
+        if (params?.schedule) query.set('schedule', params.schedule);
+        if (params?.status) query.set('status', params.status);
+        const qs = query.toString();
+        return api.get<any[]>(`/tournament${qs ? `?${qs}` : ''}`);
+    },
     register: (id: string, userId: string) => api.post(`/tournament/${id}/register`, { userId }),
 };
 

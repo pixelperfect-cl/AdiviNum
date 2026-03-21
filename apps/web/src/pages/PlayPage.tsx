@@ -23,6 +23,7 @@ export function PlayPage() {
     const [tournaments, setTournaments] = useState<any[]>([]);
     const [loadingTournaments, setLoadingTournaments] = useState(false);
     const [registering, setRegistering] = useState<string | null>(null);
+    const [tournamentTab, setTournamentTab] = useState<'daily' | 'weekly' | 'monthly' | 'active'>('daily');
 
     // Cleanup subscriber on unmount
     useEffect(() => {
@@ -38,12 +39,17 @@ export function PlayPage() {
         if (activeTab === 'tournaments') {
             loadTournaments();
         }
-    }, [activeTab]);
+    }, [activeTab, tournamentTab]);
 
     const loadTournaments = async () => {
         setLoadingTournaments(true);
         try {
-            const data = await tournamentApi.getTournaments();
+            let data: any[];
+            if (tournamentTab === 'active') {
+                data = await tournamentApi.getTournaments({ status: 'IN_PROGRESS' });
+            } else {
+                data = await tournamentApi.getTournaments({ schedule: tournamentTab });
+            }
             setTournaments(data);
         } catch (err) {
             console.error(err);
@@ -99,6 +105,13 @@ export function PlayPage() {
         ? calculatePrize(selectedBet, levelConfig.commissionPercent)
         : 0;
 
+    const tournamentSubTabs: { key: 'daily' | 'weekly' | 'monthly' | 'active'; label: string; icon: string }[] = [
+        { key: 'daily', label: 'Diarios', icon: '📅' },
+        { key: 'weekly', label: 'Semanales', icon: '📆' },
+        { key: 'monthly', label: 'Mensuales', icon: '🗓️' },
+        { key: 'active', label: 'Activos', icon: '🔴' },
+    ];
+
     return (
         <div className="fade-in">
             <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '8px' }}>
@@ -133,6 +146,44 @@ export function PlayPage() {
 
             {activeTab === 'tournaments' && (
                 <div className="play-layout">
+                    {/* Sub-tabs */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '6px',
+                        marginBottom: '16px',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderRadius: '12px',
+                        padding: '4px',
+                    }}>
+                        {tournamentSubTabs.map((tab) => (
+                            <button
+                                key={tab.key}
+                                onClick={() => setTournamentTab(tab.key)}
+                                style={{
+                                    flex: 1,
+                                    padding: '10px 6px',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: tournamentTab === tab.key ? 700 : 500,
+                                    background: tournamentTab === tab.key
+                                        ? 'linear-gradient(135deg, var(--gold), var(--gold-dark, #c8a000))'
+                                        : 'transparent',
+                                    color: tournamentTab === tab.key ? '#000' : 'var(--text-secondary)',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '2px',
+                                }}
+                            >
+                                <span style={{ fontSize: '16px' }}>{tab.icon}</span>
+                                <span>{tab.label}</span>
+                            </button>
+                        ))}
+                    </div>
+
                     {loadingTournaments ? (
                         <div style={{ textAlign: 'center', padding: '40px' }}>
                             <div className="spinner" style={{ margin: '0 auto 16px' }} />
@@ -140,7 +191,14 @@ export function PlayPage() {
                         </div>
                     ) : tournaments.length === 0 ? (
                         <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
-                            <p className="text-muted">No hay torneos activos en este momento.</p>
+                            <p style={{ fontSize: '32px', marginBottom: '8px' }}>
+                                {tournamentTab === 'active' ? '🏟️' : '🕐'}
+                            </p>
+                            <p className="text-muted">
+                                {tournamentTab === 'active'
+                                    ? 'No hay torneos en curso.'
+                                    : 'No hay torneos disponibles en esta categoría.'}
+                            </p>
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -154,6 +212,11 @@ export function PlayPage() {
                                             <span>Pozo: <strong className="text-gold">${t.prizePool.toLocaleString()}</strong></span>
                                             <span>Jugadores: {t._count?.participants || 0}/{t.maxPlayers}</span>
                                         </div>
+                                        {t.status === 'IN_PROGRESS' && (
+                                            <div style={{ marginTop: '6px', fontSize: '12px', color: '#F59E0B', fontWeight: 600 }}>
+                                                🟡 En curso
+                                            </div>
+                                        )}
                                     </div>
                                     {t.status === 'REGISTRATION' && (
                                         <button
@@ -162,6 +225,14 @@ export function PlayPage() {
                                             disabled={registering === t.id || t._count?.participants >= t.maxPlayers}
                                         >
                                             {registering === t.id ? 'Registrando...' : 'Unirse'}
+                                        </button>
+                                    )}
+                                    {t.status === 'IN_PROGRESS' && (
+                                        <button
+                                            className="btn btn--secondary"
+                                            style={{ fontSize: '13px' }}
+                                        >
+                                            👁️ Espectador
                                         </button>
                                     )}
                                 </div>

@@ -89,8 +89,13 @@ export const api = {
         request(`/users/${userId}/push-token`, 'POST', { token }),
 
     // Tournaments
-    listTournaments: () =>
-        request('/tournament'),
+    listTournaments: (params?: { schedule?: string; status?: string }) => {
+        const query = new URLSearchParams();
+        if (params?.schedule) query.set('schedule', params.schedule);
+        if (params?.status) query.set('status', params.status);
+        const qs = query.toString();
+        return request(`/tournament${qs ? `?${qs}` : ''}`);
+    },
 
     getTournament: (id: string) =>
         request(`/tournament/${id}`),

@@ -167,3 +167,23 @@ export enum GameEvent {
   ROUND_OVER = 'round_over',
   ERROR = 'game_error',
 }
+
+// ---- Chat WebSocket Events ----
+export enum ChatEvent {
+  // Client -> Server
+  DM_SEND = 'dm:send',
+  DM_HISTORY = 'dm:history',
+  DM_TYPING = 'dm:typing',
+  ROOM_JOIN = 'room:join',
+  ROOM_LEAVE = 'room:leave',
+  ROOM_SEND = 'room:send',
+  ROOM_HISTORY = 'room:history',
+
+  // Server -> Client
+  DM_NEW = 'dm:new',
+  DM_TYPING_INDICATOR = 'dm:typing_indicator',
+  ROOM_MESSAGE = 'room:message',
+  ROOM_JOINED = 'room:joined',
+  ROOM_LEFT = 'room:left',
+  ROOM_MEMBER_COUNT = 'room:member_count',
+}

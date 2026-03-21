@@ -12,6 +12,69 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.0.5-BETA',
+        date: '2026-03-21',
+        sections: [
+            {
+                title: 'Sistema de Rondas',
+                icon: '🎮',
+                items: [
+                    'Rondas por partida — elige entre 1, 3 o 5 rondas al buscar match',
+                    'Solo emparejas con jugadores de la misma cantidad de rondas',
+                    'Indicador visual de ronda actual y marcador de serie',
+                    'El primero en ganar la mayoría de rondas gana la partida',
+                    'Apuesta configurada una vez para toda la serie',
+                ],
+            },
+            {
+                title: 'Social FAB',
+                icon: '💬',
+                items: [
+                    'Botón flotante social — hub centralizado para amigos, chats y salas',
+                    'Animación de apertura/cierre con overlay',
+                    'Fix: botón de chat navega correctamente a la pestaña de chats',
+                    'Fix: confirmación con menú overflow para evitar borrados accidentales de amigos',
+                ],
+            },
+            {
+                title: 'Torneos',
+                icon: '🏆',
+                items: [
+                    'Pestaña de torneos añadida a la app móvil con listado, registro e info',
+                    'Scheduler mejorado con gestión de estados refinada',
+                    'Tipos compartidos para torneos en packages/shared',
+                ],
+            },
+            {
+                title: 'Historial & UI',
+                icon: '📜',
+                items: [
+                    'Tarjetas de historial expandibles/colapsables para ver detalles',
+                    'Empates añadidos al perfil para mejorar estadísticas',
+                    'Tab Espectador en la app móvil',
+                ],
+            },
+            {
+                title: 'Timer & Fairness',
+                icon: '⏱️',
+                items: [
+                    'Corrección de bugs en duración de timers y victoria/derrota',
+                    'Mensajes claros de feedback cuando un jugador agota su tiempo',
+                    'Mecánica "última oportunidad" para el jugador sin tiempo',
+                    'Corrección en flujo de revancha y retos directos',
+                ],
+            },
+            {
+                title: 'Bug Fixes',
+                icon: '🐛',
+                items: [
+                    'CORS configurado para aceptar requests desde el cliente web',
+                    'Setup de la app web (apps/web) con Vite + React independiente del mobile',
+                ],
+            },
+        ],
+    },
+    {
         version: '1.0.4-BETA',
         date: '2026-03-19',
         sections: [
@@ -308,7 +371,7 @@ export function ChangelogPage() {
                 }}>
                     <span style={{ fontSize: '1.2rem' }}>💻</span>
                     <div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~18,500</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~20,500</div>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Líneas de código</div>
                     </div>
                 </div>
@@ -323,7 +386,7 @@ export function ChangelogPage() {
                 }}>
                     <span style={{ fontSize: '1.2rem' }}>⏱️</span>
                     <div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~480h</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~500h</div>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Desarrollo estimado</div>
                     </div>
                 </div>

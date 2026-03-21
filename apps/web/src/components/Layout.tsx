@@ -187,7 +187,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {/* Version badge */}
                 <NavLink to="/changelog" className="sidebar__version-badge">
                     <span className="sidebar__version-badge-icon">🎮</span>
-                    <span className="sidebar__version-badge-text">AdiviNum v1.0.4</span>
+                    <span className="sidebar__version-badge-text">AdiviNum v1.0.5</span>
                     <span className="sidebar__version-badge-tag">BETA</span>
                 </NavLink>
 
@@ -313,7 +313,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {/* Footer — visible on mobile */}
                 <footer className="app-footer mobile-only">
                     <NavLink to="/changelog" className="app-footer__version">
-                        🎮 AdiviNum v1.0.4 BETA
+                        🎮 AdiviNum v1.0.5 BETA
                     </NavLink>
                     <a
                         href="https://pixelperfect.cl"

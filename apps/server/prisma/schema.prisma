@@ -46,6 +46,9 @@ model User {
   tournamentParticipants TournamentParticipant[]
   tournamentMatchesA     TournamentMatch[] @relation("TMatchPlayerA")
   tournamentMatchesB     TournamentMatch[] @relation("TMatchPlayerB")
+  messagesSent     ChatMessage[]    @relation("ChatSender")
+  messagesReceived ChatMessage[]    @relation("ChatReceiver")
+  chatRoomMemberships ChatRoomMember[]
 
   @@map("users")
 }
@@ -279,6 +282,7 @@ model Tournament {
   prizeDistribution    Json             @default("[50, 25, 15, 10]") @map("prize_distribution")
   maxPlayers           Int              @map("max_players")
   status               String           @default("REGISTRATION")
+  schedule             String?          @map("schedule")          // daily | weekly | monthly
   startsAt             DateTime         @map("starts_at")
   startedAt            DateTime?        @map("started_at")
   finishedAt           DateTime?        @map("finished_at")
@@ -323,4 +327,55 @@ model TournamentMatch {
 
   @@index([tournamentId, roundNumber])
   @@map("tournament_matches")
+}
+
+// ============================================================
+// Chat & Rooms
+// ============================================================
+
+model ChatMessage {
+  id          String   @id @default(uuid())
+  senderId    String   @map("sender_id")
+  receiverId  String?  @map("receiver_id")
+  roomId      String?  @map("room_id")
+  content     String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  sender   User      @relation("ChatSender", fields: [senderId], references: [id])
+  receiver User?     @relation("ChatReceiver", fields: [receiverId], references: [id])
+  room     ChatRoom? @relation(fields: [roomId], references: [id])
+
+  @@index([senderId, receiverId])
+  @@index([roomId, createdAt])
+  @@map("chat_messages")
+}
+
+model ChatRoom {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  iconEmoji   String   @default("🌐") @map("icon_emoji")
+  createdById String?  @map("created_by_id")
+  isOfficial  Boolean  @default(false) @map("is_official")
+  maxMembers  Int      @default(50) @map("max_members")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  messages ChatMessage[]
+  members  ChatRoomMember[]
+
+  @@map("chat_rooms")
+}
+
+model ChatRoomMember {
+  id       String   @id @default(uuid())
+  roomId   String   @map("room_id")
+  userId   String   @map("user_id")
+  role     String   @default("MEMBER")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  room ChatRoom @relation(fields: [roomId], references: [id])
+  user User     @relation(fields: [userId], references: [id])
+
+  @@unique([roomId, userId])
+  @@map("chat_room_members")
 }

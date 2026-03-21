@@ -15,6 +15,7 @@ import { AdminModule } from './admin/admin.module';
 import { TournamentModule } from './tournament/tournament.module';
 import { NotificationModule } from './notification/notification.module';
 import { FriendsModule } from './friends/friends.module';
+import { ChatModule } from './chat/chat.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -41,6 +42,7 @@ import { HealthController } from './health.controller';
         TournamentModule,
         NotificationModule,
         FriendsModule,
+        ChatModule,
     ],
     controllers: [HealthController],
     providers: [

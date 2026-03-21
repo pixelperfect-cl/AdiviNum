@@ -7,8 +7,11 @@ export class TournamentController {
     constructor(private readonly tournamentService: TournamentService) { }
 
     @Get()
-    async listTournaments(@Query('status') status?: string) {
-        return this.tournamentService.listTournaments(status);
+    async listTournaments(
+        @Query('status') status?: string,
+        @Query('schedule') schedule?: string,
+    ) {
+        return this.tournamentService.listTournaments(status, schedule);
     }
 
     @Get(':id')

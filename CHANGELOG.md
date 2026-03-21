@@ -1,6 +1,6 @@
 # Changelog
 
-> 📊 **~18,500 líneas de código** · ⏱️ **~480h desarrollo estimado**
+> 📊 **~20,500 líneas de código** · ⏱️ **~500h desarrollo estimado**
 
 ## [1.0.5-BETA] — 2026-03-21
 
@@ -36,6 +36,23 @@
 - **Feedback de timeout** — Mensajes claros cuando un jugador agota su tiempo
 - **Mecánica "última oportunidad"** — El jugador que se queda sin tiempo tiene una última chance
 - Corrección en flujo de revancha y retos directos
+
+### 🏆 Torneos
+
+- **Torneos en mobile** — Pestaña de torneos añadida a la app móvil con listado, registro e info
+- **Scheduler mejorado** — Torneos automáticos con gestión de estados refinada
+- Tipos compartidos para torneos en `packages/shared`
+
+### 📜 Historial
+
+- **Tarjetas expandibles** — Las partidas del historial ahora se expanden/colapsan para ver detalles
+
+### 🐛 Bug Fixes
+
+- **Social FAB: chat** — El botón de chat navega correctamente a la pestaña de chats
+- **Social FAB: eliminar amigo** — Confirmación con menú overflow para evitar borrados accidentales
+- **CORS** — Configuración del servidor para aceptar requests desde el cliente web (puerto 5555)
+- **Web app** — Setup de la app web (`apps/web`) con Vite + React independiente del mobile
 
 ---
 

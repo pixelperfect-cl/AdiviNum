@@ -22,6 +22,7 @@ interface CreateTournamentDto {
     prizeDistribution: number[]; // Percentages: [50, 25, 15, 10] = top 4
     startsAt: Date;
     registrationDeadline: Date;
+    schedule?: string; // 'daily' | 'weekly' | 'monthly'
 }
 
 @Injectable()
@@ -61,6 +62,7 @@ export class TournamentService {
                 prizePool: 0,
                 prizeDistribution: dto.prizeDistribution,
                 status: 'REGISTRATION',
+                schedule: dto.schedule,
                 startsAt: dto.startsAt,
                 registrationDeadline: dto.registrationDeadline,
             },
@@ -285,13 +287,34 @@ export class TournamentService {
     }
 
     /**
-     * List active and upcoming tournaments
+     * List active and upcoming tournaments.
+     * Filters out expired REGISTRATION tournaments (deadline passed).
      */
-    async listTournaments(status?: string) {
-        const where = status ? { status } : { status: { in: ['REGISTRATION', 'IN_PROGRESS'] } };
+    async listTournaments(status?: string, schedule?: string) {
+        const now = new Date();
+        const where: any = {};
+
+        if (status) {
+            where.status = status;
+        } else {
+            // Show REGISTRATION (not expired) + IN_PROGRESS
+            where.OR = [
+                {
+                    status: 'REGISTRATION',
+                    registrationDeadline: { gte: now },
+                },
+                {
+                    status: 'IN_PROGRESS',
+                },
+            ];
+        }
+
+        if (schedule) {
+            where.schedule = schedule;
+        }
 
         return this.prisma.tournament.findMany({
-            where: where as any,
+            where,
             orderBy: { startsAt: 'asc' },
             include: {
                 _count: { select: { participants: true } },
