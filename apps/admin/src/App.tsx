@@ -90,23 +90,77 @@ export default function App() {
                         </NavLink>
                     ))}
                 </nav>
-                <div style={{ marginTop: 'auto', padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ marginTop: 'auto', padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                     <NavLink
                         to="/changelog"
-                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                        style={{ marginBottom: 8 }}
+                        style={({ isActive }) => ({
+                            display: 'block',
+                            textDecoration: 'none',
+                            padding: '14px 16px',
+                            borderRadius: 12,
+                            background: isActive
+                                ? 'linear-gradient(135deg, rgba(234,179,8,0.15), rgba(234,179,8,0.05))'
+                                : 'linear-gradient(135deg, rgba(234,179,8,0.08), rgba(234,179,8,0.02))',
+                            border: '1px solid rgba(234,179,8,0.2)',
+                            marginBottom: 6,
+                            transition: 'all 0.2s ease',
+                        })}
                     >
-                        <FileText size={16} />
-                        <span style={{ flex: 1 }}>Changelog</span>
-                        <span style={{
-                            fontSize: 9,
-                            fontWeight: 700,
-                            padding: '2px 6px',
-                            borderRadius: 6,
-                            background: 'var(--color-gold)',
-                            color: '#000',
-                        }}>v1.0</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                            <span style={{ fontSize: 16 }}>🎮</span>
+                            <span style={{
+                                fontWeight: 800,
+                                fontSize: 14,
+                                color: 'var(--color-gold)',
+                            }}>AdiviNum v1.0.6</span>
+                            <span style={{
+                                fontSize: 9,
+                                fontWeight: 800,
+                                padding: '1px 6px',
+                                borderRadius: 4,
+                                background: 'var(--color-gold)',
+                                color: '#000',
+                                letterSpacing: '0.05em',
+                            }}>BETA</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                background: 'rgba(59,130,246,0.2)',
+                                color: '#60A5FA',
+                                letterSpacing: '0.03em',
+                            }}>Admin v1.0</span>
+                            <span style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                background: 'rgba(16,185,129,0.2)',
+                                color: '#34D399',
+                                letterSpacing: '0.03em',
+                            }}>~21K LOC</span>
+                            <span style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                background: 'rgba(139,92,246,0.2)',
+                                color: '#A78BFA',
+                                letterSpacing: '0.03em',
+                            }}>~510h</span>
+                        </div>
                     </NavLink>
+                    <div style={{
+                        textAlign: 'center',
+                        fontSize: 11,
+                        color: 'var(--color-text-muted)',
+                        marginBottom: 10,
+                    }}>
+                        Powered by <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>Pixel Perfect</span>
+                    </div>
                     <button
                         onClick={handleLogout}
                         className="nav-link"
