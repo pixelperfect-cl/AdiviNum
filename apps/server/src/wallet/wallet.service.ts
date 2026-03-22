@@ -137,6 +137,32 @@ export class WalletService {
     }
 
     /**
+     * Refund a held bet (full amount, no commission) — used for cancelled matches
+     */
+    async refundBet(userId: string, amount: number, currencyType: CurrencyType) {
+        const wallet = await this.getWallet(userId);
+        const field = currencyType === CurrencyType.FIAT ? 'balanceFiat' : 'balanceVirtual';
+
+        await this.prisma.$transaction([
+            this.prisma.wallet.update({
+                where: { userId },
+                data: { [field]: { increment: amount } },
+            }),
+            this.prisma.transaction.create({
+                data: {
+                    walletId: wallet.id,
+                    type: TransactionType.BET_RELEASE,
+                    amount,
+                    currencyType,
+                    description: `Reembolso por partida cancelada: $${amount}`,
+                },
+            }),
+        ]);
+
+        this.logger.log(`Bet refunded: ${userId} + $${amount} ${currencyType}`);
+    }
+
+    /**
      * Deposit funds (from payment gateway)
      */
     async deposit(userId: string, amount: number, currencyType: CurrencyType) {

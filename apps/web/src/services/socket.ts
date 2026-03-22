@@ -310,12 +310,13 @@ function setupListeners(s: Socket) {
         commission: number;
         secretA?: string;
         secretB?: string;
+        reason?: string;
     }) => {
         console.log('[WS] Game over!', data);
         const gameStore = useGameStore.getState();
         const myRole = gameStore.myRole;
         const opponentSecret = myRole === 'A' ? data.secretB : data.secretA;
-        gameStore.setGameOver(data.result, data.winnerId, data.winnerPrize, opponentSecret || undefined);
+        gameStore.setGameOver(data.result, data.winnerId, data.winnerPrize, opponentSecret || undefined, data.reason);
 
         // Sound based on outcome
         const aWins = ['PLAYER_A_WINS', 'ABANDON_B', 'TIMEOUT_B'].includes(data.result);

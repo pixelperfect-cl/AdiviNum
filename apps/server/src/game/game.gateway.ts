@@ -363,10 +363,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                         try {
                             const result = await this.gameService.handleSecretTimeout(match.id);
                             if (result) {
-                                const uA = this.gameService.getFirebaseUid(match.id, 'A');
-                                const uB = this.gameService.getFirebaseUid(match.id, 'B');
-                                if (uA) { const s = this.userSockets.get(uA); if (s) this.server.to(s).emit(GameEvent.GAME_OVER, result); }
-                                if (uB) { const s = this.userSockets.get(uB); if (s) this.server.to(s).emit(GameEvent.GAME_OVER, result); }
+                                const payload = { ...result, reason: 'secret_timeout' };
+                                // Use UIDs from result since endMatch() already deleted the match from activeMatches
+                                const uA = (result as any).firebaseUidA;
+                                const uB = (result as any).firebaseUidB;
+                                if (uA) { const s = this.userSockets.get(uA); if (s) this.server.to(s).emit(GameEvent.GAME_OVER, payload); }
+                                if (uB) { const s = this.userSockets.get(uB); if (s) this.server.to(s).emit(GameEvent.GAME_OVER, payload); }
                             }
                         } catch (e) {
                             this.logger.error(`Secret timeout handling error: ${e}`);
@@ -521,8 +523,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
                             try {
                                 const timeoutResult = await this.gameService.handleSecretTimeout(data.matchId);
                                 if (timeoutResult) {
-                                    if (socketA) this.server.to(socketA).emit(GameEvent.GAME_OVER, timeoutResult);
-                                    if (socketB) this.server.to(socketB).emit(GameEvent.GAME_OVER, timeoutResult);
+                                    const payload = { ...timeoutResult, reason: 'secret_timeout' };
+                                    // Use UIDs from result since endMatch() already deleted the match
+                                    const sA = (timeoutResult as any).firebaseUidA ? this.userSockets.get((timeoutResult as any).firebaseUidA) : null;
+                                    const sB = (timeoutResult as any).firebaseUidB ? this.userSockets.get((timeoutResult as any).firebaseUidB) : null;
+                                    if (sA) this.server.to(sA).emit(GameEvent.GAME_OVER, payload);
+                                    if (sB) this.server.to(sB).emit(GameEvent.GAME_OVER, payload);
                                 }
                             } catch (e) {
                                 this.logger.error(`Round secret timeout error: ${e}`);

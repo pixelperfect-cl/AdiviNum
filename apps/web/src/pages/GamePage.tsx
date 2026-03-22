@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../stores/gameStore';
 import { useUserStore } from '../stores/userStore';
-import { setSecret as sendSecret, makeGuess, surrender, offerDraw, respondDraw, sendChatMessage, requestRematch, respondRematch } from '../services/socket';
+import { setSecret as sendSecret, makeGuess, surrender, offerDraw, respondDraw, sendChatMessage, requestRematch, respondRematch, joinQueue } from '../services/socket';
 import { isValidSecret, getLevelConfig } from '@adivinum/shared';
 import { soundGuessSent } from '../services/sounds';
 import { NumPad } from '../components/NumPad';
@@ -131,6 +131,7 @@ function SetSecretPhase() {
         ? (countdown / game.secretTimerSeconds) * 100
         : 100;
     const isUrgent = countdown != null && countdown <= 10;
+    const isExpired = countdown != null && countdown <= 0;
 
     return (
         <div className="game-phase-center">
@@ -153,7 +154,19 @@ function SetSecretPhase() {
                     </div>
                 )}
 
-                {!isSubmitted ? (
+                {/* Timer expired — waiting for server to end match */}
+                {isExpired && !isSubmitted ? (
+                    <div className="secret-waiting">
+                        <div className="game-over-emoji" style={{ fontSize: '2.5rem' }}>⏰</div>
+                        <p style={{ color: '#ff6b6b', fontWeight: 600, marginTop: '8px' }}>
+                            ¡Se acabó el tiempo!
+                        </p>
+                        <div className="spinner" style={{ margin: '12px auto' }} />
+                        <p className="game-phase-subtitle">
+                            Finalizando partida...
+                        </p>
+                    </div>
+                ) : !isSubmitted ? (
                     <>
                         <div className="secret-input-group">
                             <input
@@ -563,6 +576,8 @@ function GameOverPhase() {
     const { fetchUser } = useUserStore();
     const navigate = useNavigate();
 
+    const isSecretTimeout = game.gameOverReason === 'secret_timeout';
+
     // Determine if I won — handle all result types
     // PLAYER_A_WINS, ABANDON_B, TIMEOUT_B → A wins
     // PLAYER_B_WINS, ABANDON_A, TIMEOUT_A → B wins
@@ -576,9 +591,9 @@ function GameOverPhase() {
         fetchUser();
     }, [fetchUser]);
 
-    // Fire confetti on victory!
+    // Fire confetti on victory (but not for secret timeouts)
     useEffect(() => {
-        if (iWon) {
+        if (iWon && !isSecretTimeout) {
             import('canvas-confetti').then((confettiModule) => {
                 const confetti = confettiModule.default;
                 // First burst
@@ -603,7 +618,7 @@ function GameOverPhase() {
                 }, 300);
             });
         }
-    }, [iWon]);
+    }, [iWon, isSecretTimeout]);
 
     const handleBack = () => {
         game.resetGame();
@@ -613,7 +628,20 @@ function GameOverPhase() {
     return (
         <div className="game-phase-center">
             <div className="game-phase-card game-over-card game-over-animate">
-                {isDraw ? (
+                {/* Secret timeout — special UI */}
+                {isSecretTimeout ? (
+                    <>
+                        <div className="game-over-emoji">⏰</div>
+                        <h2 className="game-over-title" style={{ color: '#ff6b6b' }}>Partida Cancelada</h2>
+                        <p className="game-over-result">
+                            {isDraw
+                                ? 'Ningún jugador eligió su número a tiempo.'
+                                : iWon
+                                    ? 'Tu rival no eligió su número a tiempo. Se te devuelve tu apuesta.'
+                                    : 'No elegiste tu número a tiempo. La partida fue invalidada.'}
+                        </p>
+                    </>
+                ) : isDraw ? (
                     <>
                         <div className="game-over-emoji">🤝</div>
                         <h2 className="game-over-title">¡Empate!</h2>
@@ -633,6 +661,7 @@ function GameOverPhase() {
                     </>
                 )}
 
+                {!isSecretTimeout && (
                 <p className="game-over-result">
                     {(() => {
                         const r = game.result || '';
@@ -647,8 +676,10 @@ function GameOverPhase() {
                         return 'Tu rival ganó la partida';
                     })()}
                 </p>
+                )}
 
-                {/* Opponent info & secret reveal */}
+                {/* Opponent info & secret reveal — hidden on secret timeout */}
+                {!isSecretTimeout && (
                 <div className="game-over-details">
                     {game.opponentName && (
                         <p className="game-over-opponent">
@@ -664,62 +695,85 @@ function GameOverPhase() {
                         Tu número: <span className="secret-display">{game.mySecret}</span>
                     </p>
                 </div>
-
-                {/* Rematch offered by opponent */}
-                {game.rematchOfferedBy && (
-                    <div className="rematch-offer">
-                        <p>🔄 ¡Tu rival quiere revancha!</p>
-                        <div className="rematch-offer-buttons">
-                            <button
-                                className="btn btn--primary"
-                                onClick={() => {
-                                    respondRematch(game.rematchOfferedBy!, true);
-                                    game.setRematchOffered('');
-                                }}
-                            >
-                                ✅ Aceptar
-                            </button>
-                            <button
-                                className="btn btn--ghost"
-                                onClick={() => {
-                                    respondRematch(game.rematchOfferedBy!, false);
-                                    game.setRematchOffered('');
-                                }}
-                            >
-                                ❌ Rechazar
-                            </button>
-                        </div>
-                    </div>
                 )}
 
-                {/* Rematch actions */}
+                {/* Actions */}
                 <div className="game-over-actions">
-                    {!game.rematchPending && !game.rematchDeclined && !game.rematchOfferedBy && (
-                        <button
-                            className="btn btn--primary btn--large btn--block"
-                            onClick={() => {
-                                requestRematch(game.opponentId!, game.level, game.betAmount, game.currencyType);
-                                game.setRematchPending(true);
-                            }}
-                        >
-                            🔄 Revancha
-                        </button>
+                    {isSecretTimeout ? (
+                        <>
+                            <button
+                                className="btn btn--primary btn--large btn--block"
+                                onClick={() => {
+                                    const { level, betAmount, currencyType, totalRounds } = game;
+                                    game.resetGame();
+                                    joinQueue(level, betAmount, currencyType, 300, totalRounds);
+                                }}
+                            >
+                                🔍 Buscar nueva partida
+                            </button>
+                            <button
+                                className="btn btn--ghost btn--large btn--block"
+                                onClick={handleBack}
+                            >
+                                Volver al menú
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            {/* Rematch offered by opponent */}
+                            {game.rematchOfferedBy && (
+                                <div className="rematch-offer">
+                                    <p>🔄 ¡Tu rival quiere revancha!</p>
+                                    <div className="rematch-offer-buttons">
+                                        <button
+                                            className="btn btn--primary"
+                                            onClick={() => {
+                                                respondRematch(game.rematchOfferedBy!, true);
+                                                game.setRematchOffered('');
+                                            }}
+                                        >
+                                            ✅ Aceptar
+                                        </button>
+                                        <button
+                                            className="btn btn--ghost"
+                                            onClick={() => {
+                                                respondRematch(game.rematchOfferedBy!, false);
+                                                game.setRematchOffered('');
+                                            }}
+                                        >
+                                            ❌ Rechazar
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                            {!game.rematchPending && !game.rematchDeclined && !game.rematchOfferedBy && (
+                                <button
+                                    className="btn btn--primary btn--large btn--block"
+                                    onClick={() => {
+                                        requestRematch(game.opponentId!, game.level, game.betAmount, game.currencyType);
+                                        game.setRematchPending(true);
+                                    }}
+                                >
+                                    🔄 Revancha
+                                </button>
+                            )}
+                            {game.rematchPending && (
+                                <span className="rematch-pending">
+                                    <div className="spinner" style={{ width: '14px', height: '14px' }} />
+                                    Esperando respuesta del rival...
+                                </span>
+                            )}
+                            {game.rematchDeclined && (
+                                <span className="rematch-declined">❌ Revancha rechazada</span>
+                            )}
+                            <button
+                                className="btn btn--ghost btn--large btn--block"
+                                onClick={handleBack}
+                            >
+                                Volver al menú
+                            </button>
+                        </>
                     )}
-                    {game.rematchPending && (
-                        <span className="rematch-pending">
-                            <div className="spinner" style={{ width: '14px', height: '14px' }} />
-                            Esperando respuesta del rival...
-                        </span>
-                    )}
-                    {game.rematchDeclined && (
-                        <span className="rematch-declined">❌ Revancha rechazada</span>
-                    )}
-                    <button
-                        className="btn btn--ghost btn--large btn--block"
-                        onClick={handleBack}
-                    >
-                        Volver al menú
-                    </button>
                 </div>
             </div>
         </div>

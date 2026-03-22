@@ -193,16 +193,49 @@ export class GameService {
         const hasA = !!active.secretA;
         const hasB = !!active.secretB;
 
-        if (!hasA && !hasB) {
-            // Neither set — cancel/draw, refund both
-            return this.endMatch(matchId, MatchResult.DRAW);
-        } else if (hasA && !hasB) {
-            // B didn't set secret — B loses
-            return this.endMatch(matchId, MatchResult.TIMEOUT_B);
-        } else {
-            // A didn't set secret — A loses
-            return this.endMatch(matchId, MatchResult.TIMEOUT_A);
+        // Refund both players' bets — match was never played
+        try {
+            await this.wallet.refundBet(active.playerAId, active.betAmount, active.currencyType);
+            await this.wallet.refundBet(active.playerBId, active.betAmount, active.currencyType);
+        } catch (err) {
+            this.logger.error(`Secret timeout refund error for match ${matchId}:`, err);
         }
+
+        // Delete match from DB — don't save cancelled matches to history
+        try {
+            await this.prisma.match.delete({ where: { id: matchId } });
+        } catch (err) {
+            this.logger.error(`Failed to delete cancelled match ${matchId}:`, err);
+        }
+
+        // Remove from active matches
+        this.activeMatches.delete(matchId);
+
+        this.logger.log(`Match ${matchId} cancelled (secret timeout): A=${hasA}, B=${hasB}`);
+
+        // Return lightweight result for gateway to emit
+        let result: string;
+        if (!hasA && !hasB) {
+            result = 'DRAW';
+        } else if (hasA && !hasB) {
+            result = 'TIMEOUT_B';
+        } else {
+            result = 'TIMEOUT_A';
+        }
+
+        return {
+            type: 'game_over' as const,
+            result,
+            winnerId: null,
+            loserId: null,
+            winnerPrize: 0,
+            winnerFirebaseUid: null,
+            commission: 0,
+            firebaseUidA: active.firebaseUidA,
+            firebaseUidB: active.firebaseUidB,
+            secretA: '',
+            secretB: '',
+        };
     }
 
     /**

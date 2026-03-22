@@ -42,6 +42,7 @@ interface GameState {
     secretTimerSeconds: number | null; // countdown for setting secret
     isLastChance: boolean;             // match point / last chance active
     lastChanceRole: 'attacker' | 'defender' | null; // which side of last chance
+    gameOverReason: string | null;     // e.g. 'secret_timeout'
     // Rounds
     totalRounds: number;
     currentRound: number;
@@ -64,7 +65,7 @@ interface GameState {
     setTimes: (a: number, b: number) => void;
     addMyAttempt: (attempt: AttemptResult) => void;
     addOpponentAttempt: (attempt: AttemptResult) => void;
-    setGameOver: (result: string, winnerId: string | null, prize: number, opponentSecret?: string) => void;
+    setGameOver: (result: string, winnerId: string | null, prize: number, opponentSecret?: string, reason?: string) => void;
     setLevel: (level: number) => void;
     setCurrencyType: (type: CurrencyType) => void;
     setDrawOffered: (offered: boolean) => void;
@@ -113,6 +114,7 @@ const initialState = {
     secretTimerSeconds: null as number | null,
     isLastChance: false,
     lastChanceRole: null as 'attacker' | 'defender' | null,
+    gameOverReason: null as string | null,
     totalRounds: 1,
     currentRound: 1,
     myWins: 0,
@@ -180,8 +182,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     addOpponentAttempt: (attempt) =>
         set((state) => ({ opponentAttempts: [...state.opponentAttempts, attempt] })),
 
-    setGameOver: (result, winnerId, winnerPrize, opponentSecret) =>
-        set({ phase: 'game_over', result, winnerId, winnerPrize, opponentSecret: opponentSecret ?? null, drawOffered: false, drawPending: false, isLastChance: false, lastChanceRole: null }),
+    setGameOver: (result, winnerId, winnerPrize, opponentSecret, reason) =>
+        set({ phase: 'game_over', result, winnerId, winnerPrize, opponentSecret: opponentSecret ?? null, gameOverReason: reason ?? null, drawOffered: false, drawPending: false, isLastChance: false, lastChanceRole: null }),
 
     setLevel: (level) => set({ level }),
     setCurrencyType: (currencyType) => set({ currencyType }),
