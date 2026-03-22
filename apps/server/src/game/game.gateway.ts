@@ -914,6 +914,39 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.logger.log(`Spectator ${client.id} left spectate:${data.matchId}`);
     }
 
+    @SubscribeMessage(GameEvent.ADMIN_CHAT)
+    handleAdminChat(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: { matchId: string; message: string },
+    ) {
+        const msg = (data.message || '').trim();
+        if (!msg || msg.length > 200) return;
+
+        this.logger.log(`Admin chat in match ${data.matchId}: ${msg}`);
+
+        // Send to both players
+        const uidA = this.gameService.getFirebaseUid(data.matchId, 'A');
+        const uidB = this.gameService.getFirebaseUid(data.matchId, 'B');
+
+        const payload = {
+            message: msg,
+            from: 'ADMIN',
+            timestamp: Date.now(),
+        };
+
+        if (uidA) {
+            const socketA = this.userSockets.get(uidA);
+            if (socketA) this.server.to(socketA).emit(GameEvent.ADMIN_MESSAGE, payload);
+        }
+        if (uidB) {
+            const socketB = this.userSockets.get(uidB);
+            if (socketB) this.server.to(socketB).emit(GameEvent.ADMIN_MESSAGE, payload);
+        }
+
+        // Also echo to spectators
+        this.server.to(`spectate:${data.matchId}`).emit(GameEvent.ADMIN_MESSAGE, payload);
+    }
+
     // ---- Direct Challenge (#11) ----
 
     // Map: challengeId -> { challengerId, targetId, level, betAmount, currencyType }

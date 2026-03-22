@@ -265,11 +265,16 @@ export class GameService {
         const list: Array<{
             matchId: string;
             level: number;
+            betAmount: number;
             currentTurn: 'A' | 'B';
             attemptsA: number;
             attemptsB: number;
             timeRemainingA: number;
             timeRemainingB: number;
+            usernameA: string;
+            usernameB: string;
+            avatarA: string | null;
+            avatarB: string | null;
         }> = [];
 
         for (const [, m] of this.activeMatches) {
@@ -278,11 +283,16 @@ export class GameService {
                 list.push({
                     matchId: m.id,
                     level: m.level,
+                    betAmount: m.betAmount,
                     currentTurn: m.currentTurn,
                     attemptsA: m.attemptsA,
                     attemptsB: m.attemptsB,
                     timeRemainingA: m.timeRemainingA,
                     timeRemainingB: m.timeRemainingB,
+                    usernameA: m.usernameA,
+                    usernameB: m.usernameB,
+                    avatarA: m.avatarA,
+                    avatarB: m.avatarB,
                 });
             }
         }
@@ -298,11 +308,18 @@ export class GameService {
         return {
             matchId: m.id,
             level: m.level,
+            betAmount: m.betAmount,
             currentTurn: m.currentTurn,
             attemptsA: m.attemptsA,
             attemptsB: m.attemptsB,
+            historyA: m.historyA,
+            historyB: m.historyB,
             timeRemainingA: m.timeRemainingA,
             timeRemainingB: m.timeRemainingB,
+            usernameA: m.usernameA,
+            usernameB: m.usernameB,
+            avatarA: m.avatarA,
+            avatarB: m.avatarB,
         };
     }
 

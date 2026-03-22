@@ -1,110 +1,48 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../api';
+import {
+    Users,
+    Gamepad2,
+    Trophy,
+    DollarSign,
+} from 'lucide-react';
 
 export default function Dashboard() {
-    const [stats, setStats] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const { data: stats, isLoading } = useQuery({
+        queryKey: ['dashboard'],
+        queryFn: adminApi.getDashboard,
+    });
 
-    useEffect(() => {
-        adminApi.getDashboard()
-            .then(setStats)
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, []);
-
-    if (loading) {
-        return <div className="loading-spinner">⏳ Cargando dashboard...</div>;
+    if (isLoading) {
+        return <div className="loading-spinner">Cargando dashboard...</div>;
     }
+
+    const cards = [
+        { icon: Users, label: 'Usuarios', value: stats?.totalUsers ?? 0, color: 'var(--color-blue)' },
+        { icon: Gamepad2, label: 'Partidas Activas', value: stats?.activeMatches ?? 0, color: 'var(--color-green)' },
+        { icon: Trophy, label: 'Partidas Jugadas', value: stats?.totalMatches ?? 0, color: 'var(--color-purple)' },
+        { icon: DollarSign, label: 'Comisiones', value: `$${(stats?.totalRevenue ?? 0).toLocaleString()}`, color: 'var(--color-gold)' },
+    ];
 
     return (
         <div>
             <div className="page-header">
                 <h1>Dashboard</h1>
-                <p>Resumen general de AdiviNum</p>
+                <p>Resumen general de la plataforma</p>
             </div>
 
-            {/* Stats Grid */}
             <div className="stats-grid">
-                <div className="stat-card">
-                    <div className="stat-icon">👥</div>
-                    <div className="stat-info">
-                        <div className="stat-value">{stats?.totalUsers?.toLocaleString() ?? '—'}</div>
-                        <div className="stat-label">Usuarios</div>
+                {cards.map((card) => (
+                    <div className="stat-card" key={card.label}>
+                        <div className="stat-icon" style={{ color: card.color }}>
+                            <card.icon size={28} />
+                        </div>
+                        <div className="stat-info">
+                            <div className="stat-value">{card.value}</div>
+                            <div className="stat-label">{card.label}</div>
+                        </div>
                     </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon">🎮</div>
-                    <div className="stat-info">
-                        <div className="stat-value">{stats?.activeMatches?.toLocaleString() ?? '—'}</div>
-                        <div className="stat-label">Partidas activas</div>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon">💰</div>
-                    <div className="stat-info">
-                        <div className="stat-value">${stats?.totalRevenue?.toLocaleString() ?? '—'}</div>
-                        <div className="stat-label">Ingresos totales</div>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon">⏳</div>
-                    <div className="stat-info">
-                        <div className="stat-value">{stats?.pendingWithdrawals?.toLocaleString() ?? '—'}</div>
-                        <div className="stat-label">Retiros pendientes</div>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon">🏟️</div>
-                    <div className="stat-info">
-                        <div className="stat-value">{stats?.activeTournaments ?? '—'}</div>
-                        <div className="stat-label">Torneos activos</div>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon">🔗</div>
-                    <div className="stat-info">
-                        <div className="stat-value">{stats?.totalReferrals ?? '—'}</div>
-                        <div className="stat-label">Referidos</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="data-table-wrapper">
-                <div className="table-header">
-                    <h2>📋 Actividad reciente</h2>
-                </div>
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Evento</th>
-                            <th>Detalle</th>
-                            <th>Tiempo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {stats?.recentActivity?.length > 0 ? (
-                            stats.recentActivity.map((a: any, i: number) => (
-                                <tr key={i}>
-                                    <td><span className={`badge ${a.badgeClass}`}>{a.type}</span></td>
-                                    <td>{a.detail}</td>
-                                    <td className="text-muted">{a.time}</td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={3} className="text-muted" style={{ textAlign: 'center', padding: '40px' }}>
-                                    Sin actividad reciente
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                ))}
             </div>
         </div>
     );

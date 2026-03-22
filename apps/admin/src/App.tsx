@@ -1,19 +1,35 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
+import {
+    LayoutDashboard,
+    Users as UsersIcon,
+    Gamepad2,
+    Banknote,
+    Trophy,
+    Award,
+    Settings,
+    LogOut,
+    FileText,
+} from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Matches from './pages/Matches';
 import Withdrawals from './pages/Withdrawals';
 import Tournaments from './pages/Tournaments';
+import Achievements from './pages/Achievements';
+import SettingsPage from './pages/Settings';
+import Changelog from './pages/Changelog';
 import Login from './pages/Login';
 
 const NAV_ITEMS = [
-    { path: '/', icon: '📊', label: 'Dashboard' },
-    { path: '/users', icon: '👥', label: 'Usuarios' },
-    { path: '/matches', icon: '🎮', label: 'Partidas' },
-    { path: '/withdrawals', icon: '💸', label: 'Retiros' },
-    { path: '/tournaments', icon: '🏟️', label: 'Torneos' },
+    { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/users', icon: UsersIcon, label: 'Usuarios' },
+    { path: '/matches', icon: Gamepad2, label: 'Partidas' },
+    { path: '/withdrawals', icon: Banknote, label: 'Retiros' },
+    { path: '/tournaments', icon: Trophy, label: 'Torneos' },
+    { path: '/achievements', icon: Award, label: 'Logros' },
+    { path: '/settings', icon: Settings, label: 'Configuración' },
 ];
 
 export default function App() {
@@ -46,7 +62,7 @@ export default function App() {
         }
     };
 
-    if (isAuthenticated === null) return <div>Loading...</div>;
+    if (isAuthenticated === null) return <div className="loading-spinner">Cargando...</div>;
 
     if (!isAuthenticated) return <Login onLogin={() => setIsAuthenticated(true)} />;
 
@@ -69,13 +85,34 @@ export default function App() {
                             end={item.path === '/'}
                             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                         >
-                            <span className="nav-icon">{item.icon}</span>
+                            <item.icon size={18} className="nav-icon" />
                             {item.label}
                         </NavLink>
                     ))}
                 </nav>
-                <div style={{ padding: '20px' }}>
-                    <button onClick={handleLogout} style={{ background: '#e94560', color: 'white', border: 'none', padding: '10px', borderRadius: '4px', cursor: 'pointer', width: '100%' }}>
+                <div style={{ marginTop: 'auto', padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    <NavLink
+                        to="/changelog"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        style={{ marginBottom: 8 }}
+                    >
+                        <FileText size={16} />
+                        <span style={{ flex: 1 }}>Changelog</span>
+                        <span style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: 6,
+                            background: 'var(--color-gold)',
+                            color: '#000',
+                        }}>v1.0</span>
+                    </NavLink>
+                    <button
+                        onClick={handleLogout}
+                        className="nav-link"
+                        style={{ color: 'var(--color-red)' }}
+                    >
+                        <LogOut size={18} />
                         Cerrar Sesión
                     </button>
                 </div>
@@ -89,6 +126,9 @@ export default function App() {
                     <Route path="/matches" element={<Matches />} />
                     <Route path="/withdrawals" element={<Withdrawals />} />
                     <Route path="/tournaments" element={<Tournaments />} />
+                    <Route path="/achievements" element={<Achievements />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/changelog" element={<Changelog />} />
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
             </main>

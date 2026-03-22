@@ -1,74 +1,67 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../api';
+import { Banknote, Clock, DollarSign, CheckCircle, XCircle, BarChart3 } from 'lucide-react';
 
 export default function Withdrawals() {
-    const [withdrawals, setWithdrawals] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
 
-    useEffect(() => {
-        adminApi.getWithdrawals()
-            .then(setWithdrawals)
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, []);
+    const { data: withdrawals = [], isLoading } = useQuery({
+        queryKey: ['withdrawals'],
+        queryFn: adminApi.getWithdrawals,
+    });
 
-    const handleAction = async (id: string, action: 'approve' | 'reject') => {
-        try {
-            if (action === 'approve') {
-                await adminApi.approveWithdrawal(id);
-            } else {
-                await adminApi.rejectWithdrawal(id);
-            }
-            setWithdrawals(withdrawals.map(w =>
-                w.id === id ? { ...w, status: action === 'approve' ? 'APPROVED' : 'REJECTED' } : w
-            ));
-        } catch (err) {
-            console.error(`${action} failed:`, err);
-        }
-    };
+    const approveMut = useMutation({
+        mutationFn: adminApi.approveWithdrawal,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['withdrawals'] }),
+    });
+
+    const rejectMut = useMutation({
+        mutationFn: adminApi.rejectWithdrawal,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['withdrawals'] }),
+    });
 
     const getStatusBadge = (status: string) => {
         const map: Record<string, { cls: string; label: string }> = {
-            PENDING: { cls: 'badge-orange', label: '⏳ Pendiente' },
-            APPROVED: { cls: 'badge-green', label: '✅ Aprobado' },
-            REJECTED: { cls: 'badge-red', label: '❌ Rechazado' },
-            COMPLETED: { cls: 'badge-blue', label: '💸 Completado' },
+            PENDING: { cls: 'badge-orange', label: 'Pendiente' },
+            APPROVED: { cls: 'badge-green', label: 'Aprobado' },
+            REJECTED: { cls: 'badge-red', label: 'Rechazado' },
+            COMPLETED: { cls: 'badge-blue', label: 'Completado' },
         };
         const info = map[status] ?? { cls: '', label: status };
         return <span className={`badge ${info.cls}`}>{info.label}</span>;
     };
 
-    const pending = withdrawals.filter(w => w.status === 'PENDING');
-    const totalPending = pending.reduce((sum, w) => sum + (w.amount || 0), 0);
+    const pending = withdrawals.filter((w: any) => w.status === 'PENDING');
+    const totalPending = pending.reduce((sum: number, w: any) => sum + (w.amount || 0), 0);
 
-    if (loading) {
-        return <div className="loading-spinner">⏳ Cargando retiros...</div>;
+    if (isLoading) {
+        return <div className="loading-spinner">Cargando retiros...</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1>Retiros</h1>
+                <h1 className="flex items-center gap-3"><Banknote size={28} /> Retiros</h1>
                 <p>Gestionar solicitudes de retiro</p>
             </div>
 
             <div className="stats-grid">
                 <div className="stat-card">
-                    <div className="stat-icon">⏳</div>
+                    <div className="stat-icon" style={{ color: 'var(--color-orange)' }}><Clock size={28} /></div>
                     <div className="stat-info">
                         <div className="stat-value">{pending.length}</div>
                         <div className="stat-label">Pendientes</div>
                     </div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-icon">💰</div>
+                    <div className="stat-icon" style={{ color: 'var(--color-gold)' }}><DollarSign size={28} /></div>
                     <div className="stat-info">
                         <div className="stat-value">${totalPending.toLocaleString()}</div>
                         <div className="stat-label">Monto pendiente</div>
                     </div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-icon">📊</div>
+                    <div className="stat-icon" style={{ color: 'var(--color-blue)' }}><BarChart3 size={28} /></div>
                     <div className="stat-info">
                         <div className="stat-value">{withdrawals.length}</div>
                         <div className="stat-label">Total solicitudes</div>
@@ -78,7 +71,7 @@ export default function Withdrawals() {
 
             <div className="data-table-wrapper">
                 <div className="table-header">
-                    <h2>💸 Solicitudes de retiro</h2>
+                    <h2 className="flex items-center gap-2"><Banknote size={18} /> Solicitudes de retiro</h2>
                 </div>
                 <table className="data-table">
                     <thead>
@@ -99,16 +92,16 @@ export default function Withdrawals() {
                                 </td>
                             </tr>
                         ) : (
-                            withdrawals.map((w) => (
+                            withdrawals.map((w: any) => (
                                 <tr key={w.id}>
                                     <td>
                                         <div className="user-cell">
                                             <div className="user-avatar">
-                                                {w.user?.username?.[0]?.toUpperCase() ?? '?'}
+                                                {w.wallet?.user?.username?.[0]?.toUpperCase() ?? '?'}
                                             </div>
                                             <div>
-                                                <div className="user-name">{w.user?.username ?? 'N/A'}</div>
-                                                <div className="user-email">{w.user?.email ?? ''}</div>
+                                                <div className="user-name">{w.wallet?.user?.username ?? 'N/A'}</div>
+                                                <div className="user-email">{w.wallet?.user?.email ?? ''}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -124,20 +117,22 @@ export default function Withdrawals() {
                                     </td>
                                     <td>
                                         {w.status === 'PENDING' && (
-                                            <div style={{ display: 'flex', gap: 6 }}>
+                                            <div className="flex gap-2">
                                                 <button
                                                     className="btn btn-green"
-                                                    onClick={() => handleAction(w.id, 'approve')}
+                                                    onClick={() => approveMut.mutate(w.id)}
+                                                    disabled={approveMut.isPending}
                                                     style={{ fontSize: '12px' }}
                                                 >
-                                                    ✅ Aprobar
+                                                    <CheckCircle size={14} /> Aprobar
                                                 </button>
                                                 <button
                                                     className="btn btn-red"
-                                                    onClick={() => handleAction(w.id, 'reject')}
+                                                    onClick={() => rejectMut.mutate(w.id)}
+                                                    disabled={rejectMut.isPending}
                                                     style={{ fontSize: '12px' }}
                                                 >
-                                                    ❌ Rechazar
+                                                    <XCircle size={14} /> Rechazar
                                                 </button>
                                             </div>
                                         )}

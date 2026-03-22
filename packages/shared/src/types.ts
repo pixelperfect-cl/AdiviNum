@@ -137,6 +137,7 @@ export enum GameEvent {
   LEAVE_SPECTATE = 'leave_spectate',
   SEND_CHALLENGE = 'send_challenge',
   RESPOND_CHALLENGE = 'respond_challenge',
+  ADMIN_CHAT = 'admin_chat',
 
   // Server -> Client
   MATCH_FOUND = 'match_found',
@@ -165,6 +166,7 @@ export enum GameEvent {
   LAST_CHANCE = 'last_chance',
   SECRET_TIMEOUT = 'secret_timeout',
   ROUND_OVER = 'round_over',
+  ADMIN_MESSAGE = 'admin_message',
   ERROR = 'game_error',
 }
 

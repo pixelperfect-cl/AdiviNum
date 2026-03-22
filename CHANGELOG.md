@@ -1,6 +1,23 @@
 # Changelog
 
-> 📊 **~20,500 líneas de código** · ⏱️ **~500h desarrollo estimado**
+> 📊 **~21,000 líneas de código** · ⏱️ **~510h desarrollo estimado**
+
+## [1.0.6-BETA] — 2026-03-22
+
+### ⏱️ Secret Timer Timeout
+
+- **Timeout de número secreto** — Si un jugador no envía su número secreto a tiempo, la partida se cancela automáticamente
+- **Reembolso de apuestas** — Las apuestas se devuelven íntegramente al cancelar por timeout del secreto
+- **Bloqueo de input a 0s** — El input se bloquea inmediatamente al llegar el timer a 0 para evitar envíos tardíos
+- **Pantalla de Game Over** — Ambos jugadores ven un mensaje claro indicando que la partida fue cancelada
+
+### 🐛 Bug Fixes
+
+- **Compilación TS** — Corrección de errores de tipo `NodeJS.Timeout` y `MessagePayload` no utilizado
+- **Socket cleanup** — Mejora en la desconexión de listeners de socket al salir de la partida
+- **Chat socket** — Fix en la reconexión del socket de chat
+
+---
 
 ## [1.0.5-BETA] — 2026-03-21
 

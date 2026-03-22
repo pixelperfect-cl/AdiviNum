@@ -12,6 +12,31 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.0.6-BETA',
+        date: '2026-03-22',
+        sections: [
+            {
+                title: 'Secret Timer Timeout',
+                icon: '⏱️',
+                items: [
+                    'Timeout de número secreto — si no envías a tiempo, la partida se cancela automáticamente',
+                    'Reembolso de apuestas — las apuestas se devuelven íntegramente al cancelar por timeout',
+                    'Bloqueo de input a 0s — el input se bloquea al llegar el timer a 0',
+                    'Pantalla de Game Over clara indicando la cancelación de la partida',
+                ],
+            },
+            {
+                title: 'Bug Fixes',
+                icon: '🐛',
+                items: [
+                    'Compilación TS — corrección de errores de tipo NodeJS.Timeout y MessagePayload',
+                    'Mejora en la desconexión de listeners de socket al salir de la partida',
+                    'Fix en la reconexión del socket de chat',
+                ],
+            },
+        ],
+    },
+    {
         version: '1.0.5-BETA',
         date: '2026-03-21',
         sections: [
@@ -371,7 +396,7 @@ export function ChangelogPage() {
                 }}>
                     <span style={{ fontSize: '1.2rem' }}>💻</span>
                     <div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~20,500</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~21,000</div>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Líneas de código</div>
                     </div>
                 </div>
@@ -386,7 +411,7 @@ export function ChangelogPage() {
                 }}>
                     <span style={{ fontSize: '1.2rem' }}>⏱️</span>
                     <div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~500h</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~510h</div>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Desarrollo estimado</div>
                     </div>
                 </div>

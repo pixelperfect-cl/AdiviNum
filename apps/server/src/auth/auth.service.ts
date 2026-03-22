@@ -34,6 +34,17 @@ export class AuthService {
                     include: { wallet: true },
                 });
             } else {
+                // Read initial balance from SystemSetting (admin-configurable)
+                let initialVirtualBalance = 10000;
+                try {
+                    const setting = await this.prisma.systemSetting.findUnique({
+                        where: { key: 'INITIAL_VIRTUAL_BALANCE' },
+                    });
+                    if (setting?.value) {
+                        initialVirtualBalance = parseInt(setting.value, 10) || 10000;
+                    }
+                } catch { /* table may not exist yet — use default */ }
+
                 user = await this.prisma.user.create({
                 data: {
                     supabaseUid,
@@ -43,7 +54,7 @@ export class AuthService {
                     wallet: {
                         create: {
                             balanceFiat: 0,
-                            balanceVirtual: 10000, // 10k demo coins to start
+                            balanceVirtual: initialVirtualBalance,
                             balanceSavings: 0,
                         },
                     },

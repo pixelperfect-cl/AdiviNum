@@ -108,6 +108,7 @@ model Transaction {
   description  String          @default("")
   matchId      String?         @map("match_id")
   metadata     Json?                                 // Extra data (bank info, etc)
+  status       String?                               // PENDING | APPROVED | REJECTED (withdrawals only)
   createdAt    DateTime        @default(now()) @map("created_at")
 
   wallet Wallet @relation(fields: [walletId], references: [id])
@@ -378,4 +379,17 @@ model ChatRoomMember {
 
   @@unique([roomId, userId])
   @@map("chat_room_members")
+}
+
+// ============================================================
+// System Settings (Admin Panel)
+// ============================================================
+
+model SystemSetting {
+  key         String   @id
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
 }

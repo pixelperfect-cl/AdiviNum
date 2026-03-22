@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../api';
+import { Trophy, Plus, X, Rocket } from 'lucide-react';
 
 export default function Tournaments() {
-    const [tournaments, setTournaments] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const queryClient = useQueryClient();
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({
         name: '',
@@ -19,127 +19,90 @@ export default function Tournaments() {
         registrationDeadline: '',
     });
 
-    useEffect(() => {
-        loadTournaments();
-    }, []);
+    const { data: tournaments = [], isLoading } = useQuery({
+        queryKey: ['tournaments'],
+        queryFn: adminApi.getTournaments,
+    });
 
-    const loadTournaments = async () => {
-        try {
-            const data = await adminApi.getTournaments();
-            setTournaments(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCreate = async () => {
-        if (isSubmitting) return;
-        setIsSubmitting(true);
-        try {
-            await adminApi.createTournament({
-                ...form,
-                startsAt: new Date(form.startsAt).toISOString(),
-                registrationDeadline: new Date(form.registrationDeadline).toISOString(),
-            });
+    const createMut = useMutation({
+        mutationFn: adminApi.createTournament,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tournaments'] });
             setShowForm(false);
-            loadTournaments();
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+        },
+    });
 
-    const handleStart = async (id: string) => {
-        try {
-            await adminApi.startTournament(id);
-            loadTournaments();
-        } catch (err: any) {
-            alert(err.message);
-        }
+    const startMut = useMutation({
+        mutationFn: adminApi.startTournament,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tournaments'] }),
+        onError: (err: any) => alert(err.message),
+    });
+
+    const handleCreate = () => {
+        createMut.mutate({
+            ...form,
+            startsAt: new Date(form.startsAt).toISOString(),
+            registrationDeadline: new Date(form.registrationDeadline).toISOString(),
+        });
     };
 
     const getStatusBadge = (status: string) => {
         const map: Record<string, { cls: string; label: string }> = {
-            REGISTRATION: { cls: 'badge-green', label: '🟢 Registro' },
-            IN_PROGRESS: { cls: 'badge-orange', label: '🟡 En curso' },
-            FINISHED: { cls: 'badge-purple', label: '⚫ Finalizado' },
+            REGISTRATION: { cls: 'badge-green', label: 'Registro' },
+            IN_PROGRESS: { cls: 'badge-orange', label: 'En curso' },
+            FINISHED: { cls: 'badge-purple', label: 'Finalizado' },
         };
         const info = map[status] ?? { cls: '', label: status };
         return <span className={`badge ${info.cls}`}>{info.label}</span>;
     };
 
-    if (loading) {
-        return <div className="loading-spinner">⏳ Cargando torneos...</div>;
+    if (isLoading) {
+        return <div className="loading-spinner">Cargando torneos...</div>;
     }
 
     return (
         <div>
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                    <h1>Torneos</h1>
+                    <h1 className="flex items-center gap-3"><Trophy size={28} /> Torneos</h1>
                     <p>Crear y gestionar torneos</p>
                 </div>
                 <button className="btn btn-gold" onClick={() => setShowForm(!showForm)}>
-                    {showForm ? '✕ Cancelar' : '➕ Nuevo torneo'}
+                    {showForm ? <><X size={16} /> Cancelar</> : <><Plus size={16} /> Nuevo torneo</>}
                 </button>
             </div>
 
             {/* Create Form */}
             {showForm && (
                 <div className="data-table-wrapper" style={{ padding: 24, marginBottom: 24 }}>
-                    <h2 style={{ marginBottom: 16, fontSize: 16, fontWeight: 700 }}>🏟️ Crear torneo</h2>
+                    <h2 style={{ marginBottom: 16, fontSize: 16, fontWeight: 700 }}>
+                        <Trophy size={16} className="inline mr-2" />Crear torneo
+                    </h2>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                         <div>
-                            <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                                Nombre
-                            </label>
-                            <input
-                                className="table-search"
-                                style={{ width: '100%' }}
-                                value={form.name}
+                            <label className="text-xs text-muted font-semibold block mb-1">Nombre</label>
+                            <input className="table-search w-full" value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                placeholder="Copa AdiviNum #1"
-                            />
+                                placeholder="Copa AdiviNum #1" />
                         </div>
                         <div>
-                            <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                                Descripción
-                            </label>
-                            <input
-                                className="table-search"
-                                style={{ width: '100%' }}
-                                value={form.description}
+                            <label className="text-xs text-muted font-semibold block mb-1">Descripción</label>
+                            <input className="table-search w-full" value={form.description}
                                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                                placeholder="Torneo semanal..."
-                            />
+                                placeholder="Torneo semanal..." />
                         </div>
                         <div>
-                            <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                                Formato
-                            </label>
-                            <select
-                                className="table-search"
-                                style={{ width: '100%' }}
-                                value={form.format}
-                                onChange={(e) => setForm({ ...form, format: e.target.value })}
-                            >
+                            <label className="text-xs text-muted font-semibold block mb-1">Formato</label>
+                            <select className="table-search w-full" value={form.format}
+                                onChange={(e) => setForm({ ...form, format: e.target.value })}>
                                 <option value="SINGLE_ELIMINATION">Eliminación directa</option>
                                 <option value="ROUND_ROBIN">Round Robin</option>
                             </select>
                         </div>
                         <div>
-                            <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                                Max jugadores
-                            </label>
-                            <select
-                                className="table-search"
-                                style={{ width: '100%' }}
-                                value={form.maxPlayers}
-                                onChange={(e) => setForm({ ...form, maxPlayers: Number(e.target.value) })}
-                            >
+                            <label className="text-xs text-muted font-semibold block mb-1">Max jugadores</label>
+                            <select className="table-search w-full" value={form.maxPlayers}
+                                onChange={(e) => setForm({ ...form, maxPlayers: Number(e.target.value) })}>
                                 <option value={8}>8</option>
                                 <option value={16}>16</option>
                                 <option value={32}>32</option>
@@ -147,82 +110,40 @@ export default function Tournaments() {
                             </select>
                         </div>
                         <div>
-                            <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                                Cuota de entrada
-                            </label>
-                            <input
-                                className="table-search"
-                                style={{ width: '100%' }}
-                                type="number"
-                                value={form.entryFee}
-                                onChange={(e) => setForm({ ...form, entryFee: Number(e.target.value) })}
-                            />
+                            <label className="text-xs text-muted font-semibold block mb-1">Cuota de entrada</label>
+                            <input className="table-search w-full" type="number" value={form.entryFee}
+                                onChange={(e) => setForm({ ...form, entryFee: Number(e.target.value) })} />
                         </div>
                         <div>
-                            <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                                Moneda
-                            </label>
-                            <select
-                                className="table-search"
-                                style={{ width: '100%' }}
-                                value={form.currencyType}
-                                onChange={(e) => setForm({ ...form, currencyType: e.target.value })}
-                            >
+                            <label className="text-xs text-muted font-semibold block mb-1">Moneda</label>
+                            <select className="table-search w-full" value={form.currencyType}
+                                onChange={(e) => setForm({ ...form, currencyType: e.target.value })}>
                                 <option value="VIRTUAL">Virtual (demo)</option>
                                 <option value="FIAT">Fiat (real)</option>
                             </select>
                         </div>
                         <div>
-                            <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                                Nivel
-                            </label>
-                            <input
-                                className="table-search"
-                                style={{ width: '100%' }}
-                                type="number"
-                                min={1}
-                                max={10}
-                                value={form.level}
-                                onChange={(e) => setForm({ ...form, level: Number(e.target.value) })}
-                            />
+                            <label className="text-xs text-muted font-semibold block mb-1">Nivel</label>
+                            <input className="table-search w-full" type="number" min={1} max={10} value={form.level}
+                                onChange={(e) => setForm({ ...form, level: Number(e.target.value) })} />
                         </div>
                         <div>
-                            <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                                Inicio del torneo
-                            </label>
-                            <input
-                                className="table-search"
-                                style={{ width: '100%' }}
-                                type="datetime-local"
-                                value={form.startsAt}
-                                onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
-                            />
+                            <label className="text-xs text-muted font-semibold block mb-1">Inicio del torneo</label>
+                            <input className="table-search w-full" type="datetime-local" value={form.startsAt}
+                                onChange={(e) => setForm({ ...form, startsAt: e.target.value })} />
                         </div>
                         <div>
-                            <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                                Cierre de registro
-                            </label>
-                            <input
-                                className="table-search"
-                                style={{ width: '100%' }}
-                                type="datetime-local"
-                                value={form.registrationDeadline}
-                                onChange={(e) => setForm({ ...form, registrationDeadline: e.target.value })}
-                            />
+                            <label className="text-xs text-muted font-semibold block mb-1">Cierre de registro</label>
+                            <input className="table-search w-full" type="datetime-local" value={form.registrationDeadline}
+                                onChange={(e) => setForm({ ...form, registrationDeadline: e.target.value })} />
                         </div>
                     </div>
                     <div style={{ marginTop: 20, display: 'flex', gap: 12 }}>
-                        <button 
-                            className="btn btn-gold" 
-                            onClick={handleCreate}
-                            disabled={isSubmitting}
-                            style={{ opacity: isSubmitting ? 0.7 : 1, cursor: isSubmitting ? 'wait' : 'pointer' }}
-                        >
-                            {isSubmitting ? '⏳ Creando...' : '🏟️ Crear torneo'}
+                        <button className="btn btn-gold" onClick={handleCreate} disabled={createMut.isPending}
+                            style={{ opacity: createMut.isPending ? 0.7 : 1 }}>
+                            {createMut.isPending ? 'Creando...' : <><Trophy size={14} /> Crear torneo</>}
                         </button>
-                        <button className="btn" onClick={() => setShowForm(false)}>
-                            Cancelar
-                        </button>
+                        <button className="btn" onClick={() => setShowForm(false)}>Cancelar</button>
                     </div>
                 </div>
             )}
@@ -230,7 +151,7 @@ export default function Tournaments() {
             {/* Tournament List */}
             <div className="data-table-wrapper">
                 <div className="table-header">
-                    <h2>🏟️ Torneos ({tournaments.length})</h2>
+                    <h2 className="flex items-center gap-2"><Trophy size={18} /> Torneos ({tournaments.length})</h2>
                 </div>
                 <table className="data-table">
                     <thead>
@@ -253,17 +174,17 @@ export default function Tournaments() {
                                 </td>
                             </tr>
                         ) : (
-                            tournaments.map((t) => (
+                            tournaments.map((t: any) => (
                                 <tr key={t.id}>
                                     <td>
                                         <div>
-                                            <div className="font-bold" style={{ color: 'var(--text-primary)' }}>{t.name}</div>
+                                            <div className="font-bold" style={{ color: 'var(--color-text-primary)' }}>{t.name}</div>
                                             {t.description && (
                                                 <div className="text-muted" style={{ fontSize: 12 }}>{t.description}</div>
                                             )}
                                         </div>
                                     </td>
-                                    <td>{t.format === 'SINGLE_ELIMINATION' ? '🏆 Eliminación' : '🔄 Liga'}</td>
+                                    <td>{t.format === 'SINGLE_ELIMINATION' ? 'Eliminación' : 'Liga'}</td>
                                     <td>{t._count?.participants ?? 0}/{t.maxPlayers}</td>
                                     <td>${t.entryFee?.toLocaleString()}</td>
                                     <td className="text-gold font-bold">${t.prizePool?.toLocaleString()}</td>
@@ -277,10 +198,11 @@ export default function Tournaments() {
                                         {t.status === 'REGISTRATION' && (
                                             <button
                                                 className="btn btn-green"
-                                                onClick={() => handleStart(t.id)}
+                                                onClick={() => startMut.mutate(t.id)}
+                                                disabled={startMut.isPending}
                                                 style={{ fontSize: 12 }}
                                             >
-                                                🚀 Iniciar
+                                                <Rocket size={14} /> Iniciar
                                             </button>
                                         )}
                                     </td>
