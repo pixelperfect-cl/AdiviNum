@@ -85,8 +85,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Desktop sidebar — hidden on mobile */}
             <aside className="sidebar">
                 <div className="sidebar__brand">
-                    <span className="sidebar__logo">AdiviNum</span>
-                    <span className="sidebar__tagline">Adivina el número</span>
+                    <img src="/LogoAdivinum.webp" alt="AdiviNum" className="sidebar__logo" style={{ width: 160, height: 'auto' }} />
                 </div>
 
                 {/* User card in sidebar — click to open dropdown */}
@@ -187,7 +186,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {/* Version badge */}
                 <NavLink to="/changelog" className="sidebar__version-badge">
                     <span className="sidebar__version-badge-icon">🎮</span>
-                    <span className="sidebar__version-badge-text">AdiviNum v1.0.5</span>
+                    <span className="sidebar__version-badge-text">AdiviNum v1.0.7</span>
                     <span className="sidebar__version-badge-tag">BETA</span>
                 </NavLink>
 
@@ -210,7 +209,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="main-area">
                 {/* Top header — always visible */}
                 <header className="top-header">
-                    <span className="top-header__logo mobile-only" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>AdiviNum</span>
+                    <img src="/LogoAdivinum.webp" alt="AdiviNum" className="top-header__logo mobile-only" onClick={() => navigate('/')} style={{ cursor: 'pointer', width: 100, height: 'auto' }} />
                     <div className="top-header__spacer desktop-only" />
                     <div className="top-header__right">
                         <button
@@ -313,7 +312,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {/* Footer — visible on mobile */}
                 <footer className="app-footer mobile-only">
                     <NavLink to="/changelog" className="app-footer__version">
-                        🎮 AdiviNum v1.0.5 BETA
+                        <img src="/LogoAdivinum.webp" alt="AdiviNum" style={{ width: 80, height: 'auto' }} /> v1.0.7 BETA
                     </NavLink>
                     <a
                         href="https://pixelperfect.cl"

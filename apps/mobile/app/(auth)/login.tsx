@@ -8,6 +8,7 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
+    Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -73,8 +74,11 @@ export default function LoginScreen() {
             >
                 {/* Logo */}
                 <View style={styles.logoContainer}>
-                    <Text style={styles.logoIcon}>🎲</Text>
-                    <Text style={styles.logoText}>ADIVINUM</Text>
+                    <Image
+                        source={require('@/assets/images/adivinum-logo.png')}
+                        style={styles.logoImage}
+                        resizeMode="contain"
+                    />
                     <Text style={styles.tagline}>El juego que no es para cualquiera</Text>
                 </View>
 
@@ -156,6 +160,11 @@ const styles = StyleSheet.create({
         marginBottom: Spacing.xxxl,
     },
     logoIcon: { fontSize: 64, marginBottom: Spacing.md },
+    logoImage: {
+        width: 200,
+        height: 80,
+        marginBottom: Spacing.md,
+    },
     logoText: {
         fontSize: FontSize.display,
         fontWeight: '900',

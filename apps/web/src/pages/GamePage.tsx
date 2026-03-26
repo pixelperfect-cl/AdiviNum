@@ -224,6 +224,17 @@ function PlayingPhase() {
     const inputRef = useRef<HTMLInputElement>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
+    const [matchPointVisible, setMatchPointVisible] = useState(false);
+
+    // Show overlay when match point triggers
+    useEffect(() => {
+        if (game.isLastChance) {
+            setMatchPointVisible(true);
+            const timer = setTimeout(() => setMatchPointVisible(false), 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [game.isLastChance]);
+
     // Auto-scroll chat + track unread
     useEffect(() => {
         if (chatEndRef.current) {
@@ -286,6 +297,33 @@ function PlayingPhase() {
                         <div className="spinner" />
                         <p>Rival desconectado — esperando reconexión...</p>
                     </div>
+                </div>
+            )}
+
+            {/* Match Point overlay — appears for 4s then fades */}
+            {matchPointVisible && (
+                <div className="match-point-overlay" onClick={() => setMatchPointVisible(false)}>
+                    <div className="match-point-card">
+                        <div className="match-point-icon">⚡</div>
+                        <h2 className="match-point-title">¡MATCH POINT!</h2>
+                        <p className="match-point-msg">
+                            {game.lastChanceRole === 'defender'
+                                ? '¡Tu oponente adivinó tu número! Este es tu último intento para empatar.'
+                                : '¡Adivinaste el número secreto! Esperando el último intento del rival...'}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Persistent match point banner */}
+            {game.isLastChance && !matchPointVisible && (
+                <div className="match-point-banner">
+                    <span>⚡ MATCH POINT — </span>
+                    <span>
+                        {game.lastChanceRole === 'defender'
+                            ? '¡Último intento para empatar!'
+                            : 'Esperando último intento del rival...'}
+                    </span>
                 </div>
             )}
 

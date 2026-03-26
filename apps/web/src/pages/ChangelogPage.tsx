@@ -12,6 +12,63 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.0.7-BETA',
+        date: '2026-03-26',
+        sections: [
+            {
+                title: 'Identidad de Marca',
+                icon: '🎨',
+                items: [
+                    'Nuevo logo oficial — LogoAdivinum.webp reemplaza todos los textos y logos antiguos',
+                    'Logo implementado en sidebar, header móvil, footer y login de juego y admin',
+                    'Formato WebP optimizado para mejor rendimiento y calidad',
+                ],
+            },
+            {
+                title: 'Rediseño Login del Juego',
+                icon: '✨',
+                items: [
+                    'Pantalla de login completamente rediseñada con estética premium',
+                    'Fondo animado con orbs flotantes (dorado, azul, púrpura) y grid sutil',
+                    'Logo centrado con animación de entrada y glow dorado',
+                    'Card glassmorphism con backdrop-blur',
+                    'Tabs integrados Login/Registro con highlight dorado',
+                    'Inputs con iconos (✉️ 🔒 👤) y focus dorado',
+                    'Botón "Entrar al Juego" con gradiente dorado y hover glow',
+                ],
+            },
+            {
+                title: 'Rediseño Login del Admin',
+                icon: '🛡️',
+                items: [
+                    'Login del panel admin completamente rediseñado',
+                    'Orbs de gradiente animados como fondo',
+                    'Card glassmorphism con badge "PANEL ADMINISTRADOR"',
+                    'Inputs con labels y focus dorado',
+                    'Botón submit dorado con spinner animado',
+                    'Botones sociales (Google + Dev) side-by-side',
+                ],
+            },
+            {
+                title: 'Match Point',
+                icon: '🔥',
+                items: [
+                    'Alerta visual "¡Match Point!" cuando un jugador está a 1 ronda de ganar la serie',
+                    'Banner animado con gradiente rojo-dorado y tipografía impact',
+                    'Notificación dinámica para ambos jugadores según contexto',
+                ],
+            },
+            {
+                title: 'Bug Fixes',
+                icon: '🐛',
+                items: [
+                    'Fix de rutas de logo en admin (import.meta.env.BASE_URL para compatibilidad con base /admin/)',
+                    'Corrección de path resolution en Vite con base path configurado',
+                ],
+            },
+        ],
+    },
+    {
         version: '1.0.6-BETA',
         date: '2026-03-22',
         sections: [
@@ -396,7 +453,7 @@ export function ChangelogPage() {
                 }}>
                     <span style={{ fontSize: '1.2rem' }}>💻</span>
                     <div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~21,000</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~24,000</div>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Líneas de código</div>
                     </div>
                 </div>
@@ -411,7 +468,7 @@ export function ChangelogPage() {
                 }}>
                     <span style={{ fontSize: '1.2rem' }}>⏱️</span>
                     <div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~510h</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>~540h</div>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Desarrollo estimado</div>
                     </div>
                 </div>

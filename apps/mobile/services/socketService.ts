@@ -65,7 +65,7 @@ export function connectSocket(userId: string) {
     });
 
     socket.on(GameEvent.LAST_CHANCE, (data: { matchId: string; message: string; role: 'attacker' | 'defender' }) => {
-        useGameStore.getState().setLastChance(true);
+        useGameStore.getState().setLastChance(true, data.role);
     });
 
     socket.on(GameEvent.SECRET_TIMER, (data: { matchId: string; seconds: number }) => {

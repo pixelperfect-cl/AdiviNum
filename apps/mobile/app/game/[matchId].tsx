@@ -15,6 +15,9 @@ import { useUserStore } from '@/stores/userStore';
 import { setSecret, makeGuess, surrender, joinQueue } from '@/services/socketService';
 import { isValidSecret, isValidGuess, getLevelConfig } from '@adivinum/shared';
 
+// Track whether we already showed match point alert this round
+let matchPointAlerted = false;
+
 export default function GameScreen() {
     const { matchId } = useLocalSearchParams<{ matchId: string }>();
     const phase = useGameStore((s) => s.phase);
@@ -31,6 +34,7 @@ export default function GameScreen() {
     const winnerFirebaseUid = useGameStore((s) => s.winnerFirebaseUid);
     const winnerPrize = useGameStore((s) => s.winnerPrize);
     const isLastChance = useGameStore((s) => s.isLastChance);
+    const lastChanceRole = useGameStore((s) => s.lastChanceRole);
     const secretTimerSeconds = useGameStore((s) => s.secretTimerSeconds);
     const totalRounds = useGameStore((s) => s.totalRounds);
     const currentRound = useGameStore((s) => s.currentRound);
@@ -54,6 +58,20 @@ export default function GameScreen() {
             setInputDigits(['', '', '', '']);
         }
     }, [currentRound]);
+
+    // Match point Alert
+    useEffect(() => {
+        if (isLastChance && !matchPointAlerted) {
+            matchPointAlerted = true;
+            const msg = lastChanceRole === 'defender'
+                ? '¡Tu oponente adivinó tu número! Este es tu último intento para empatar.'
+                : '¡Adivinaste el número secreto! Esperando el último intento del rival...';
+            Alert.alert('⚡ ¡MATCH POINT!', msg);
+        }
+        if (!isLastChance) {
+            matchPointAlerted = false;
+        }
+    }, [isLastChance, lastChanceRole]);
 
     // Secret timer countdown
     useEffect(() => {
@@ -277,9 +295,9 @@ export default function GameScreen() {
             {phase === 'playing' && (
                 <View style={[styles.phaseBar, isMyTurn ? styles.myTurnBar : styles.oppTurnBar]}>
                     <Text style={styles.phaseText}>
-                        {isLastChance && isMyTurn
+                        {isLastChance && lastChanceRole === 'defender'
                             ? '⚡ ¡MATCH POINT! Tu oponente adivinó. ¡Último intento!'
-                            : isLastChance && !isMyTurn
+                            : isLastChance && lastChanceRole === 'attacker'
                             ? '⚡ ¡MATCH POINT! Esperando último intento del oponente...'
                             : isMyTurn ? '🎯 ¡Tu turno!' : '⏳ Turno del oponente'}
                     </Text>

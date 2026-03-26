@@ -1782,6 +1782,93 @@ a:hover {
     font-size: 1.1rem;
 }
 
+/* Match Point overlay */
+.match-point-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(8px);
+    animation: matchPointFadeIn 0.4s ease;
+    cursor: pointer;
+}
+
+.match-point-card {
+    text-align: center;
+    padding: 32px 28px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(255, 140, 0, 0.08));
+    border: 2px solid rgba(255, 215, 0, 0.4);
+    border-radius: var(--radius-xl);
+    max-width: 360px;
+    animation: matchPointBounce 0.5s ease;
+}
+
+.match-point-icon {
+    font-size: 4rem;
+    margin-bottom: 8px;
+    animation: matchPointPulse 1s ease infinite;
+}
+
+.match-point-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #FFD700, #FF8C00, #FFD700);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 1.5s ease infinite;
+    letter-spacing: 2px;
+    margin: 0 0 12px;
+}
+
+.match-point-msg {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+@keyframes matchPointFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes matchPointBounce {
+    0% { opacity: 0; transform: scale(0.7); }
+    60% { transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes matchPointPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+/* Persistent match point banner */
+.match-point-banner {
+    text-align: center;
+    padding: 8px 16px;
+    background: linear-gradient(90deg, rgba(255, 215, 0, 0.15), rgba(255, 140, 0, 0.1), rgba(255, 215, 0, 0.15));
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--gold);
+    animation: bannerGlow 2s ease infinite;
+    margin-bottom: 4px;
+}
+
+@keyframes bannerGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.2); }
+    50% { box-shadow: 0 0 16px 4px rgba(255, 215, 0, 0.15); }
+}
+
 .game-header-v2 {
     display: flex;
     align-items: center;

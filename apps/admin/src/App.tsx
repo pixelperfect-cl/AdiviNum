@@ -22,6 +22,8 @@ import SettingsPage from './pages/Settings';
 import Changelog from './pages/Changelog';
 import Login from './pages/Login';
 
+const logoUrl = `${import.meta.env.BASE_URL}LogoAdivinum.webp`;
+
 const NAV_ITEMS = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/users', icon: UsersIcon, label: 'Usuarios' },
@@ -71,8 +73,8 @@ export default function App() {
             {/* Sidebar */}
             <aside className="sidebar">
                 <div className="sidebar-logo">
-                    <div>
-                        <div className="logo-text">ADIVINUM</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                        <img src={logoUrl} alt="AdiviNum" style={{ width: 160, height: 'auto' }} />
                         <span className="logo-badge">ADMIN</span>
                     </div>
                 </div>

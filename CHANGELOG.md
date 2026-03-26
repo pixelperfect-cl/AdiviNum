@@ -1,6 +1,45 @@
 # Changelog
 
-> 📊 **~21,000 líneas de código** · ⏱️ **~510h desarrollo estimado**
+> 📊 **~24,000 líneas de código** · ⏱️ **~540h desarrollo estimado**
+
+## [1.0.7-BETA] — 2026-03-26
+
+### 🎨 Identidad de Marca
+
+- **Nuevo logo oficial** — `LogoAdivinum.webp` reemplaza todos los textos y logos antiguos en toda la plataforma
+- **Logo en todas las apps** — Sidebar, header móvil, footer y pantallas de login (juego y admin)
+- **Formato WebP** — Assets optimizados para mejor rendimiento y calidad visual
+
+### ✨ Rediseño Login del Juego
+
+- **Login completamente rediseñado** con estética premium
+- **Fondo animado** con orbs flotantes (dorado, azul, púrpura) y grid sutil
+- **Logo centrado** con animación de entrada y glow dorado
+- **Card glassmorphism** con backdrop-blur
+- **Tabs integrados** Login/Registro con highlight dorado
+- **Inputs con iconos** (✉️ 🔒 👤) y focus dorado
+- **Botón "Entrar al Juego"** con gradiente dorado y hover glow
+
+### 🛡️ Rediseño Login del Admin
+
+- **Login del panel admin rediseñado** con estética premium
+- **Orbs de gradiente animados** como fondo (azul, dorado, púrpura)
+- **Card glassmorphism** con badge "PANEL ADMINISTRADOR"
+- **Inputs con labels** y focus dorado con spinner de loading
+- **Botones sociales** (Google + Dev) side-by-side
+
+### 🔥 Match Point
+
+- **Alerta visual "¡Match Point!"** — Se muestra cuando un jugador está a 1 ronda de ganar la serie
+- **Banner animado** con gradiente rojo-dorado y tipografía impact
+- **Notificación dinámica** para ambos jugadores según contexto (ofensivo/defensivo)
+
+### 🐛 Bug Fixes
+
+- **Rutas de logo admin** — Fix con `import.meta.env.BASE_URL` para compatibilidad con base `/admin/`
+- **Path resolution Vite** — Corrección de resolución de assets con base path configurado
+
+---
 
 ## [1.0.6-BETA] — 2026-03-22
 

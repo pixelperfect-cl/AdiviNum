@@ -16,6 +16,47 @@ interface ChangelogRelease {
 /* ─── APP CHANGELOG ─── */
 const APP_CHANGELOG: ChangelogRelease[] = [
     {
+        version: '1.0.7-BETA',
+        date: '2026-03-26',
+        sections: [
+            {
+                type: 'new', title: 'Identidad de Marca', icon: '🎨',
+                items: [
+                    'Nuevo logo oficial — LogoAdivinum.webp reemplaza todos los textos y logos antiguos',
+                    'Logo implementado en sidebar, header móvil, footer y login de juego y admin',
+                    'Formato WebP optimizado para mejor rendimiento y calidad',
+                ],
+            },
+            {
+                type: 'new', title: 'Rediseño Login del Juego', icon: '✨',
+                items: [
+                    'Pantalla de login completamente rediseñada con estética premium',
+                    'Fondo animado con orbs flotantes (dorado, azul, púrpura) y grid sutil',
+                    'Logo centrado con animación de entrada y glow dorado',
+                    'Card glassmorphism con backdrop-blur',
+                    'Tabs integrados Login/Registro con highlight dorado',
+                    'Inputs con iconos y focus dorado',
+                    'Botón "Entrar al Juego" con gradiente dorado y hover glow',
+                ],
+            },
+            {
+                type: 'new', title: 'Match Point', icon: '🔥',
+                items: [
+                    'Alerta visual "¡Match Point!" cuando un jugador está a 1 ronda de ganar la serie',
+                    'Banner animado con gradiente rojo-dorado y tipografía impact',
+                    'Notificación dinámica para ambos jugadores según contexto',
+                ],
+            },
+            {
+                type: 'fixed', title: 'Bug Fixes', icon: '🐛',
+                items: [
+                    'Fix de rutas de logo en admin (import.meta.env.BASE_URL para compatibilidad con base /admin/)',
+                    'Corrección de path resolution en Vite con base path configurado',
+                ],
+            },
+        ],
+    },
+    {
         version: '1.0.6-BETA',
         date: '2026-03-22',
         sections: [
@@ -342,6 +383,36 @@ const APP_CHANGELOG: ChangelogRelease[] = [
 /* ─── ADMIN CHANGELOG ─── */
 const ADMIN_CHANGELOG: ChangelogRelease[] = [
     {
+        version: '1.0.1',
+        date: '2026-03-26',
+        sections: [
+            {
+                type: 'new', title: 'Identidad de Marca', icon: '🎨',
+                items: [
+                    'Nuevo logo oficial LogoAdivinum.webp integrado en sidebar y login del admin',
+                    'Eliminado texto "AdiviNum" redundante — solo logo visual',
+                ],
+            },
+            {
+                type: 'new', title: 'Rediseño Login Admin', icon: '✨',
+                items: [
+                    'Login completamente rediseñado con estética premium',
+                    'Orbs de gradiente animados como fondo (azul, dorado, púrpura)',
+                    'Card glassmorphism con badge "PANEL ADMINISTRADOR"',
+                    'Inputs con labels, focus dorado y spinner de loading',
+                    'Botones Google y Dev Access side-by-side',
+                ],
+            },
+            {
+                type: 'fixed', title: 'Correcciones', icon: '🐛',
+                items: [
+                    'Fix de rutas de logo con import.meta.env.BASE_URL para base path /admin/',
+                    'Corrección de resolución de assets en Vite con base path configurado',
+                ],
+            },
+        ],
+    },
+    {
         version: '1.0.0',
         date: '2026-03-22',
         sections: [
@@ -425,8 +496,8 @@ export default function Changelog() {
                 marginBottom: 28,
                 flexWrap: 'wrap',
             }}>
-                <StatBadge emoji="💻" value="~21,000" label="Líneas de código" />
-                <StatBadge emoji="⏱️" value="~510h" label="Desarrollo estimado" />
+                <StatBadge emoji="💻" value="~24,000" label="Líneas de código" />
+                <StatBadge emoji="⏱️" value="~540h" label="Desarrollo estimado" />
                 <StatBadge emoji="📱" value="4" label="Plataformas" />
                 <StatBadge emoji="🚀" value={`${APP_CHANGELOG.length + ADMIN_CHANGELOG.length}`} label="Releases" />
             </div>

@@ -38,6 +38,7 @@ interface GameState {
     winnerFirebaseUid: string | null;
     winnerPrize: number;
     isLastChance: boolean;
+    lastChanceRole: 'attacker' | 'defender' | null;
     secretTimerSeconds: number | null;
     opponentDisconnected: boolean;
     reconnectCountdown: number | null;
@@ -61,7 +62,7 @@ interface GameState {
     addMyAttempt: (attempt: AttemptResult) => void;
     addOpponentAttempt: (attempt: AttemptResult) => void;
     setGameOver: (result: string, winnerId: string | null, prize: number, winnerFirebaseUid?: string | null) => void;
-    setLastChance: (isLastChance: boolean) => void;
+    setLastChance: (isLastChance: boolean, role?: 'attacker' | 'defender' | null) => void;
     setLevel: (level: number) => void;
     setCurrencyType: (type: CurrencyType) => void;
     setSecretTimerSeconds: (s: number | null) => void;
@@ -93,6 +94,7 @@ const initialState = {
     winnerFirebaseUid: null,
     winnerPrize: 0,
     isLastChance: false,
+    lastChanceRole: null as 'attacker' | 'defender' | null,
     secretTimerSeconds: null as number | null,
     opponentDisconnected: false,
     reconnectCountdown: null as number | null,
@@ -134,9 +136,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         set((state) => ({ opponentAttempts: [...state.opponentAttempts, attempt] })),
 
     setGameOver: (result, winnerId, winnerPrize, winnerFirebaseUid) =>
-        set({ phase: 'game_over', result, winnerId, winnerPrize, winnerFirebaseUid: winnerFirebaseUid ?? null, isLastChance: false }),
+        set({ phase: 'game_over', result, winnerId, winnerPrize, winnerFirebaseUid: winnerFirebaseUid ?? null, isLastChance: false, lastChanceRole: null }),
 
-    setLastChance: (isLastChance) => set({ isLastChance }),
+    setLastChance: (isLastChance, role) => set({ isLastChance, lastChanceRole: role ?? null }),
     setLevel: (level) => set({ level }),
     setCurrencyType: (currencyType) => set({ currencyType }),
     setSecretTimerSeconds: (secretTimerSeconds) => set({ secretTimerSeconds }),
@@ -156,6 +158,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         opponentAttempts: [],
         result: null,
         isLastChance: false,
+        lastChanceRole: null,
         secretTimerSeconds: null,
     }),
     resetGame: () => set(initialState),
