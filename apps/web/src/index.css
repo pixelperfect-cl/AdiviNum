@@ -154,14 +154,7 @@ a:hover {
 
     .sidebar__logo {
         display: block;
-        font-family: 'Outfit', sans-serif;
-        font-size: 1.8rem;
-        font-weight: 900;
-        background: linear-gradient(135deg, var(--gold), #FFA500);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        letter-spacing: -0.5px;
+        margin: 0 auto;
     }
 
     .sidebar__tagline {
