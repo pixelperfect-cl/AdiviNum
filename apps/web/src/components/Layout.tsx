@@ -4,6 +4,7 @@ import { useUserStore } from '../stores/userStore';
 import { isMuted, toggleMute } from '../services/sounds';
 import { api } from '../services/api';
 import { SocialFab } from './SocialFab';
+import logoImg from '/LogoAdivinum.webp';
 
 const NAV_ITEMS = [
     { to: '/', icon: '🏠', label: 'Inicio', end: true },
@@ -85,7 +86,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Desktop sidebar — hidden on mobile */}
             <aside className="sidebar">
                 <div className="sidebar__brand">
-                    <img src="/LogoAdivinum.webp" alt="AdiviNum" className="sidebar__logo" style={{ width: 160, height: 'auto' }} />
+                    <img src={logoImg} alt="AdiviNum" className="sidebar__logo" style={{ width: 160, height: 'auto' }} />
                 </div>
 
                 {/* User card in sidebar — click to open dropdown */}
@@ -209,7 +210,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="main-area">
                 {/* Top header — always visible */}
                 <header className="top-header">
-                    <img src="/LogoAdivinum.webp" alt="AdiviNum" className="top-header__logo mobile-only" onClick={() => navigate('/')} style={{ cursor: 'pointer', width: 100, height: 'auto' }} />
+                    <img src={logoImg} alt="AdiviNum" className="top-header__logo mobile-only" onClick={() => navigate('/')} style={{ cursor: 'pointer', width: 100, height: 'auto' }} />
                     <div className="top-header__spacer desktop-only" />
                     <div className="top-header__right">
                         <button
@@ -312,7 +313,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {/* Footer — visible on mobile */}
                 <footer className="app-footer mobile-only">
                     <NavLink to="/changelog" className="app-footer__version">
-                        <img src="/LogoAdivinum.webp" alt="AdiviNum" style={{ width: 80, height: 'auto' }} /> v1.0.7 BETA
+                        <img src={logoImg} alt="AdiviNum" style={{ width: 80, height: 'auto' }} /> v1.0.7 BETA
                     </NavLink>
                     <a
                         href="https://pixelperfect.cl"

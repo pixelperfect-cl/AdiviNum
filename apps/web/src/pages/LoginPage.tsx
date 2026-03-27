@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useUserStore } from '../stores/userStore';
+import logoImg from '/LogoAdivinum.webp';
 
 export function LoginPage() {
     const { login, signUp, loginAsDev, loginWithGoogle, isLoading, error } = useUserStore();
@@ -30,7 +31,7 @@ export function LoginPage() {
             <div className="gl__wrapper">
                 {/* Logo + tagline */}
                 <div className="gl__brand">
-                    <img src="/LogoAdivinum.webp" alt="AdiviNum" className="gl__logo" />
+                    <img src={logoImg} alt="AdiviNum" className="gl__logo" />
                     <p className="gl__tagline">Adivina el número secreto</p>
                 </div>
 
