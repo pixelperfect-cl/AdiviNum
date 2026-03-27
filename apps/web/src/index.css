@@ -147,14 +147,16 @@ a:hover {
 
     .sidebar__brand {
         text-align: center;
-        padding-bottom: 20px;
+        padding: 0 4px 16px;
         border-bottom: 1px solid var(--border);
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
 
     .sidebar__logo {
         display: block;
         margin: 0 auto;
+        width: 100% !important;
+        max-width: 220px;
     }
 
     .sidebar__tagline {
