@@ -66,9 +66,9 @@ cd $APP_DIR
 echo ""
 echo "🚀 [8/8] Deploying to public_html..."
 
-# Web frontend → public_html/ (only index.html + assets/)
-cp apps/web/dist/index.html $PUBLIC_HTML/
-cp -r apps/web/dist/assets/* $PUBLIC_HTML/assets/ 2>/dev/null || mkdir -p $PUBLIC_HTML/assets && cp -r apps/web/dist/assets/* $PUBLIC_HTML/assets/
+# Web frontend → public_html/ (all built files including static assets from public/)
+mkdir -p $PUBLIC_HTML/assets
+cp -r apps/web/dist/* $PUBLIC_HTML/
 
 # Admin panel → public_html/admin/
 mkdir -p $PUBLIC_HTML/admin
@@ -106,5 +106,5 @@ fi
 
 echo ""
 echo "=========================="
-echo "🎮 AdiviNum v1.0.5-BETA is live!"
+echo "🎮 AdiviNum v1.0.7-BETA is live!"
 echo "=========================="
